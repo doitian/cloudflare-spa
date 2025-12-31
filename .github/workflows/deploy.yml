@@ -17,13 +17,8 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Deploy to Cloudflare Pages
-        uses: cloudflare/pages-action@v1
+        uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          projectName: cloudflare-spa
-          directory: .
-          # Optional: Use the following settings to customize the deployment
-          # gitHubToken: ${{ secrets.GITHUB_TOKEN }}
-          # branch: main
-          # wranglerVersion: '3'
+          command: pages deploy . --project-name=cloudflare-spa
