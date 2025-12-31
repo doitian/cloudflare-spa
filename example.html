@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Example App - Cloudflare SPA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #f5576c;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #f5576c;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .counter-section {
+            margin: 30px 0;
+            padding: 30px;
+            background: #f9f9f9;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .counter-display {
+            font-size: 3em;
+            font-weight: bold;
+            color: #f5576c;
+            margin: 20px 0;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 20px;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(245, 87, 108, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover {
+            background: #d0d0d0;
+        }
+
+        .info-box {
+            margin-top: 30px;
+            padding: 20px;
+            background: #e8f4f8;
+            border-left: 4px solid #f5576c;
+            border-radius: 4px;
+        }
+
+        .info-box h3 {
+            color: #f5576c;
+            margin-bottom: 10px;
+        }
+
+        .info-box p {
+            color: #555;
+            line-height: 1.8;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+        
+        <h1>Example Single Page App</h1>
+        <p>This is a demonstration of a self-contained single page application with HTML, CSS, and JavaScript all in one file.</p>
+
+        <div class="counter-section">
+            <h2>Interactive Counter</h2>
+            <div class="counter-display" id="counter">0</div>
+            <div class="button-group">
+                <button class="btn-secondary" id="decrementBtn">-</button>
+                <button class="btn-secondary" id="resetBtn">Reset</button>
+                <button class="btn-primary" id="incrementBtn">+</button>
+            </div>
+        </div>
+
+        <div class="info-box">
+            <h3>About This SPA</h3>
+            <p>This example demonstrates a single page application that includes all HTML, CSS, and JavaScript in one file. It's perfect for simple applications and can be easily deployed to Cloudflare Pages.</p>
+        </div>
+
+        <footer>
+            <p>Part of Cloudflare SPA Collection</p>
+        </footer>
+    </div>
+
+    <script>
+        // Counter application
+        let count = 0;
+        const counterDisplay = document.getElementById('counter');
+        const incrementBtn = document.getElementById('incrementBtn');
+        const decrementBtn = document.getElementById('decrementBtn');
+        const resetBtn = document.getElementById('resetBtn');
+
+        function updateDisplay() {
+            counterDisplay.textContent = count;
+        }
+
+        incrementBtn.addEventListener('click', () => {
+            count++;
+            updateDisplay();
+        });
+
+        decrementBtn.addEventListener('click', () => {
+            count--;
+            updateDisplay();
+        });
+
+        resetBtn.addEventListener('click', () => {
+            count = 0;
+            updateDisplay();
+        });
+
+        // Initialize
+        updateDisplay();
+    </script>
+</body>
+</html>
