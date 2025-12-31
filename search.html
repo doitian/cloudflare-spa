@@ -107,19 +107,19 @@
                 return;
             }
 
-            // Open 2nd and 3rd search engines in new tabs, then redirect to the first
+            // Open all search engines in new tabs
             if (searchEngines.length > 0) {
                 const searchUrls = searchEngines.map(engine => 
                     engine.urlTemplate.replace('{query}', encodeURIComponent(query))
                 );
 
-                // Open 2nd and 3rd search engines in new tabs
-                for (let i = 1; i < searchUrls.length; i++) {
-                    window.open(searchUrls[i], '_blank', 'noopener,noreferrer');
-                }
+                // Open all search engines in new tabs
+                searchUrls.forEach((url, index) => {
+                    window.open(url, '_blank', 'noopener,noreferrer');
+                });
 
-                // Redirect to the first search engine
-                window.location.href = searchUrls[0];
+                // Update message to show success
+                messageEl.innerHTML = `Opened <strong>${searchEngines.length}</strong> search tabs for query: <code>${query}</code><br><br>Search engines: ${searchEngines.map(e => e.name).join(', ')}`;
             }
         }
 
