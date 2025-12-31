@@ -15,158 +15,62 @@
             font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
             line-height: 1.6;
             color: #333;
-            background: #f5f5f5;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 15px 20px;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .header-content {
-            max-width: 100%;
-            margin: 0 auto;
-            display: flex;
-            align-items: center;
-            gap: 20px;
-            flex-wrap: wrap;
-        }
-
-        .back-link {
-            color: white;
-            text-decoration: none;
-            font-weight: 500;
-            opacity: 0.9;
-        }
-
-        .back-link:hover {
-            opacity: 1;
-            text-decoration: underline;
-        }
-
-        .search-query {
-            flex: 1;
-            font-size: 1.2em;
-            font-weight: 500;
-            word-break: break-word;
-        }
-
-        .columns-container {
-            flex: 1;
-            display: flex;
-            overflow-x: auto;
-            overflow-y: hidden;
-            background: #e8e8e8;
-        }
-
-        .column {
-            min-width: 400px;
-            flex: 1;
-            display: flex;
-            flex-direction: column;
-            border-right: 2px solid #d0d0d0;
-            background: white;
-        }
-
-        .column:last-child {
-            border-right: none;
-        }
-
-        .column-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            padding: 10px 15px;
-            font-weight: 600;
-            font-size: 0.95em;
-            text-align: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .column-content {
-            flex: 1;
-            position: relative;
-            overflow: auto;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
         }
 
-        .search-button {
-            display: inline-block;
-            padding: 15px 30px;
-            font-size: 1.1em;
-            font-weight: 600;
-            color: white;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            text-decoration: none;
-            border-radius: 8px;
-            transition: all 0.3s ease;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-        }
-
-        .search-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
-        }
-
-        .info-text {
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
             text-align: center;
-            color: #666;
-            margin-top: 15px;
-            font-size: 0.9em;
         }
 
-        .no-query {
-            text-align: center;
-            padding: 60px 20px;
-            color: #666;
-        }
-
-        .no-query h2 {
+        h1 {
             color: #667eea;
-            margin-bottom: 15px;
-            font-size: 1.8em;
+            margin-bottom: 20px;
+            font-size: 2em;
         }
 
-        .no-query p {
+        p {
             font-size: 1.1em;
             margin-bottom: 10px;
+            color: #666;
         }
 
-        .no-query code {
+        code {
             background: #f0f0f0;
             padding: 2px 8px;
             border-radius: 4px;
             font-family: 'Courier New', monospace;
+            color: #667eea;
         }
 
-        @media (max-width: 768px) {
-            .column {
-                min-width: 300px;
-            }
+        .back-link {
+            display: inline-block;
+            margin-top: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <div class="header">
-        <div class="header-content">
-            <a href="/" class="back-link">← Home</a>
-            <div class="search-query" id="queryDisplay">Search Results</div>
-        </div>
-    </div>
-
-    <div class="columns-container" id="columnsContainer">
-        <div class="no-query">
-            <h2>No Search Query</h2>
-            <p>Please provide a search query using the <code>q</code> parameter.</p>
-            <p>Example: <code>?q=your+search+query</code></p>
-        </div>
+    <div class="container">
+        <h1>Search Results</h1>
+        <p id="message">Redirecting to search engines...</p>
+        <a href="/" class="back-link">← Back to Home</a>
     </div>
 
     <script>
@@ -196,16 +100,12 @@
         // Initialize the search results
         function initializeSearch() {
             const query = getQueryParameter('q');
-            const queryDisplay = document.getElementById('queryDisplay');
-            const columnsContainer = document.getElementById('columnsContainer');
+            const messageEl = document.getElementById('message');
 
             if (!query || query.trim() === '') {
-                queryDisplay.textContent = 'Search Results';
+                messageEl.innerHTML = 'Please provide a search query using the <code>q</code> parameter.<br>Example: <code>?q=your+search+query</code>';
                 return;
             }
-
-            // Update the header with the search query
-            queryDisplay.textContent = `Search: ${query}`;
 
             // Open 2nd and 3rd search engines in new tabs, then redirect to the first
             if (searchEngines.length > 0) {
