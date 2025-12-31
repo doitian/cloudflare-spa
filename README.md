@@ -53,9 +53,7 @@ To enable automatic deployment to Cloudflare Pages, you need to configure the fo
 
 ### Deployment Trigger
 
-The GitHub Actions workflow automatically deploys to Cloudflare Pages when:
-- Code is pushed to the `main` branch
-- A pull request is created or updated
+The GitHub Actions workflow automatically deploys to Cloudflare Pages when code is pushed to the `main` branch.
 
 ## Local Development
 
