@@ -207,40 +207,20 @@
             // Update the header with the search query
             queryDisplay.textContent = `Search: ${query}`;
 
-            // Clear the container
-            columnsContainer.innerHTML = '';
+            // Open 2nd and 3rd search engines in new tabs, then redirect to the first
+            if (searchEngines.length > 0) {
+                const searchUrls = searchEngines.map(engine => 
+                    engine.urlTemplate.replace('{query}', encodeURIComponent(query))
+                );
 
-            // Create a column for each search engine
-            searchEngines.forEach(engine => {
-                const column = document.createElement('div');
-                column.className = 'column';
+                // Open 2nd and 3rd search engines in new tabs
+                for (let i = 1; i < searchUrls.length; i++) {
+                    window.open(searchUrls[i], '_blank', 'noopener,noreferrer');
+                }
 
-                const header = document.createElement('div');
-                header.className = 'column-header';
-                header.textContent = engine.name;
-
-                const content = document.createElement('div');
-                content.className = 'column-content';
-
-                const searchUrl = engine.urlTemplate.replace('{query}', encodeURIComponent(query));
-                
-                const link = document.createElement('a');
-                link.href = searchUrl;
-                link.className = 'search-button';
-                link.textContent = `Search on ${engine.name}`;
-                link.target = '_blank';
-                link.rel = 'noopener noreferrer';
-
-                const infoText = document.createElement('div');
-                infoText.className = 'info-text';
-                infoText.textContent = 'Opens in new tab';
-
-                content.appendChild(link);
-                content.appendChild(infoText);
-                column.appendChild(header);
-                column.appendChild(content);
-                columnsContainer.appendChild(column);
-            });
+                // Redirect to the first search engine
+                window.location.href = searchUrls[0];
+            }
         }
 
         // Initialize on page load
