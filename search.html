@@ -90,14 +90,36 @@
         .column-content {
             flex: 1;
             position: relative;
-            overflow: hidden;
+            overflow: auto;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
         }
 
-        .column-content iframe {
-            width: 100%;
-            height: 100%;
-            border: none;
-            display: block;
+        .search-button {
+            display: inline-block;
+            padding: 15px 30px;
+            font-size: 1.1em;
+            font-weight: 600;
+            color: white;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            text-decoration: none;
+            border-radius: 8px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .info-text {
+            text-align: center;
+            color: #666;
+            margin-top: 15px;
+            font-size: 0.9em;
         }
 
         .no-query {
@@ -160,8 +182,8 @@
                 urlTemplate: 'https://kagi.com/search?q={query}'
             },
             {
-                name: 'Perspective',
-                urlTemplate: 'https://www.perspective.fyi/s?q={query}'
+                name: 'Perplexity',
+                urlTemplate: 'https://www.perplexity.ai/search?q={query}'
             }
         ];
 
@@ -200,13 +222,21 @@
                 const content = document.createElement('div');
                 content.className = 'column-content';
 
-                const iframe = document.createElement('iframe');
                 const searchUrl = engine.urlTemplate.replace('{query}', encodeURIComponent(query));
-                iframe.src = searchUrl;
-                iframe.title = `${engine.name} search results`;
-                iframe.loading = 'lazy';
+                
+                const link = document.createElement('a');
+                link.href = searchUrl;
+                link.className = 'search-button';
+                link.textContent = `Search on ${engine.name}`;
+                link.target = '_blank';
+                link.rel = 'noopener noreferrer';
 
-                content.appendChild(iframe);
+                const infoText = document.createElement('div');
+                infoText.className = 'info-text';
+                infoText.textContent = 'Opens in new tab';
+
+                content.appendChild(link);
+                content.appendChild(infoText);
                 column.appendChild(header);
                 column.appendChild(content);
                 columnsContainer.appendChild(column);
