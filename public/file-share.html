@@ -417,7 +417,7 @@
                         const data = await response.json();
                         if (data.offer) {
                             await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                            showStatus('success', 'Connected! You can now send files.');
+                            // Don't show "Connected!" here - wait for dataChannel.onopen event
                             return;
                         }
                     }
