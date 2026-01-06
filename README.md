@@ -10,7 +10,6 @@ This repository hosts a collection of Single Page Applications (SPAs), where eac
 
 - **WebRTC File Share** (`file-share.html`) - Share files directly between browsers using WebRTC
 - **Search Results** (`search.html`) - Multi-search engine opener
-- **Example App** (`example.html`) - Sample SPA demonstrating the structure
 
 ## Structure
 
