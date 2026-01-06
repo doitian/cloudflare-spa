@@ -386,7 +386,7 @@
 
             // Store offer in KV
             try {
-                const response = await fetch('/api/session', {
+                const response = await fetch('/api/file-share-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
@@ -417,7 +417,7 @@
                 }
 
                 try {
-                    const response = await fetch(`/api/session?code=${sessionCode}_answer`);
+                    const response = await fetch(`/api/file-share-session?code=${sessionCode}_answer`);
                     
                     if (response.ok) {
                         const data = await response.json();
@@ -452,7 +452,7 @@
 
             try {
                 // Get offer from KV
-                const response = await fetch(`/api/session?code=${code}`);
+                const response = await fetch(`/api/file-share-session?code=${code}`);
                 
                 if (!response.ok) {
                     throw new Error('Session not found or expired');
@@ -494,7 +494,7 @@
                 });
 
                 // Store answer in KV
-                const answerResponse = await fetch('/api/session', {
+                const answerResponse = await fetch('/api/file-share-session', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({
