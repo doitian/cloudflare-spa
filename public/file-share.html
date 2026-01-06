@@ -627,7 +627,7 @@
 
                     if (receivedSize === fileMetadata.size) {
                         // File complete
-                        const blob = new Blob(receivedBuffer, { type: fileMetadata.type });
+                        const blob = new Blob(receivedBuffer, { type: fileMetadata.mimeType });
                         downloadFile(blob, fileMetadata.name);
                         receiveArea.classList.add('hidden');
                         showStatus('success', 'File received successfully!');
@@ -651,7 +651,7 @@
                 type: 'file-metadata',
                 name: file.name,
                 size: file.size,
-                type: file.type
+                mimeType: file.type
             };
             dataChannel.send(JSON.stringify(metadata));
 
