@@ -8,8 +8,8 @@ A collection of self-contained SPAs (HTML + CSS + JavaScript in single files) se
 
 ## Available SPAs
 
-- **WebRTC File Share** - Share files directly between browsers using WebRTC
-- **Search Results** - Multi-search engine opener
+- **WebRTC File Share** (`file-share.html`) - Share files directly between browsers using WebRTC
+- **Search Results** (`search.html`) - Multi-search engine opener
 
 ## Structure
 
