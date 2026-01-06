@@ -1,26 +1,8 @@
 // Main worker entry point for all API endpoints
 
-// CORS headers
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type',
-};
-
-// Handle CORS preflight requests
-function handleOptions() {
-  return new Response(null, {
-    headers: corsHeaders
-  });
-}
-
 // Handle file share session API endpoints
 async function handleFileShareSession(request, env) {
   const url = new URL(request.url);
-  
-  if (request.method === 'OPTIONS') {
-    return handleOptions();
-  }
   
   if (request.method === 'POST') {
     try {
@@ -30,8 +12,7 @@ async function handleFileShareSession(request, env) {
         return new Response(JSON.stringify({ error: 'Missing code or offer' }), {
           status: 400,
           headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders
+            'Content-Type': 'application/json'
           }
         });
       }
@@ -44,16 +25,14 @@ async function handleFileShareSession(request, env) {
       return new Response(JSON.stringify({ success: true, code }), {
         status: 200,
         headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders
+          'Content-Type': 'application/json'
         }
       });
     } catch (error) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders
+          'Content-Type': 'application/json'
         }
       });
     }
@@ -67,8 +46,7 @@ async function handleFileShareSession(request, env) {
         return new Response(JSON.stringify({ error: 'Missing code parameter' }), {
           status: 400,
           headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders
+            'Content-Type': 'application/json'
           }
         });
       }
@@ -79,8 +57,7 @@ async function handleFileShareSession(request, env) {
         return new Response(JSON.stringify({ error: 'Session not found or expired' }), {
           status: 404,
           headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders
+            'Content-Type': 'application/json'
           }
         });
       }
@@ -93,16 +70,14 @@ async function handleFileShareSession(request, env) {
         }), {
           status: 200,
           headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders
+            'Content-Type': 'application/json'
           }
         });
       } catch (parseError) {
         return new Response(JSON.stringify({ error: 'Invalid session data' }), {
           status: 500,
           headers: { 
-            'Content-Type': 'application/json',
-            ...corsHeaders
+            'Content-Type': 'application/json'
           }
         });
       }
@@ -110,16 +85,14 @@ async function handleFileShareSession(request, env) {
       return new Response(JSON.stringify({ error: error.message }), {
         status: 500,
         headers: { 
-          'Content-Type': 'application/json',
-          ...corsHeaders
+          'Content-Type': 'application/json'
         }
       });
     }
   }
   
   return new Response('Method not allowed', {
-    status: 405,
-    headers: corsHeaders
+    status: 405
   });
 }
 
