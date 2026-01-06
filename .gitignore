@@ -4,6 +4,7 @@ node_modules/
 # Build artifacts
 dist/
 .cache/
+.wrangler/
 
 # OS files
 .DS_Store
