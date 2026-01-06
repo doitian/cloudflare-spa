@@ -250,8 +250,8 @@
             <h2>Create Session</h2>
             <p>Share this code with the person you want to share files with:</p>
             <div class="session-code" id="sessionCode">------</div>
-            <div class="status status-info">
-                Waiting for peer to join...
+            <div class="status status-info" id="createStatus">
+                Creating session...
             </div>
         </div>
 
@@ -322,6 +322,7 @@
         const joinSection = document.getElementById('joinSection');
         const transferSection = document.getElementById('transferSection');
         const sessionCodeEl = document.getElementById('sessionCode');
+        const createStatus = document.getElementById('createStatus');
         const codeInput = document.getElementById('codeInput');
         const fileInput = document.getElementById('fileInput');
         const selectedFileEl = document.getElementById('selectedFile');
@@ -346,11 +347,15 @@
         async function createSession() {
             isCreator = true;
             sessionCode = generateCode();
-            sessionCodeEl.textContent = sessionCode;
             
             choiceSection.classList.add('hidden');
             createSection.classList.remove('hidden');
             transferSection.classList.remove('hidden');
+            
+            // Show loading state
+            sessionCodeEl.textContent = '------';
+            createStatus.textContent = 'Creating session...';
+            showStatus('info', 'Creating session...');
 
             // Create peer connection
             peerConnection = new RTCPeerConnection(rtcConfig);
@@ -384,7 +389,7 @@
                 }
             });
 
-            // Store offer in KV
+            // Store offer in KV first, before showing the code to user
             try {
                 const response = await fetch('/api/file-share-session', {
                     method: 'POST',
@@ -399,9 +404,15 @@
                     throw new Error('Failed to create session');
                 }
 
+                // Now that offer is stored, show the session code to user
+                sessionCodeEl.textContent = sessionCode;
+                createStatus.textContent = 'Waiting for peer to join...';
+                showStatus('info', 'Waiting for peer to join...');
+
                 // Start polling for answer
                 pollForAnswer();
             } catch (error) {
+                createStatus.textContent = 'Failed to create session';
                 showStatus('error', 'Failed to create session: ' + error.message);
             }
         }
