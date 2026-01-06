@@ -6,10 +6,27 @@ Single Page Applications deployed to Cloudflare Pages
 
 This repository hosts a collection of Single Page Applications (SPAs), where each app is a self-contained HTML file with inline CSS and JavaScript.
 
+## Available SPAs
+
+- **WebRTC File Share** (`file-share.html`) - Share files directly between browsers using WebRTC
+- **Search Results** (`search.html`) - Multi-search engine opener
+- **Example App** (`example.html`) - Sample SPA demonstrating the structure
+
 ## Structure
 
 - `index.html` - Root page that lists all available SPAs
-- `example.html` - Sample SPA demonstrating the structure
+- `*.html` - Self-contained SPA files
+- `functions/` - Cloudflare Pages Functions (serverless API endpoints)
+- `wrangler.jsonc` - Cloudflare configuration
+
+## Deployment
+
+See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on deploying to Cloudflare Pages.
+
+**Quick Setup:**
+- Build command: `exit 0`
+- Build output directory: `/`
+- Configure KV namespace binding for `WEBRTC_SESSIONS`
 
 ## Adding a New SPA
 
@@ -33,6 +50,12 @@ const spas = [
 ## Local Development
 
 Simply open any HTML file in your browser to test locally. No build step required!
+
+For testing Pages Functions locally:
+
+```bash
+npx wrangler pages dev . --kv WEBRTC_SESSIONS
+```
 
 ## License
 
