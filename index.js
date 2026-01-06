@@ -108,6 +108,8 @@ async function handleWebSocket(request, env) {
 
   server.accept();
 
+  let pollingTimeout = null;
+
   server.addEventListener('message', async (event) => {
     try {
       const message = JSON.parse(event.data);
@@ -145,7 +147,7 @@ async function handleWebSocket(request, env) {
               }));
             } else {
               attempts++;
-              setTimeout(checkAnswer, 5000);
+              pollingTimeout = setTimeout(checkAnswer, 5000);
             }
           };
           
@@ -190,7 +192,11 @@ async function handleWebSocket(request, env) {
   });
 
   server.addEventListener('close', () => {
-    // Cleanup if needed
+    // Cleanup pending timeouts
+    if (pollingTimeout) {
+      clearTimeout(pollingTimeout);
+      pollingTimeout = null;
+    }
   });
 
   return new Response(null, {
