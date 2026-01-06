@@ -368,9 +368,18 @@
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
 
-            // Note: We don't wait for ICE gathering to complete
-            // The offer will work with trickle ICE, and candidates will be
-            // included in the localDescription as they're gathered
+            // Wait briefly for at least some ICE candidates to be gathered
+            // This ensures the SDP includes candidate information for better connectivity
+            await new Promise((resolve) => {
+                const timeout = setTimeout(resolve, 1000); // Wait up to 1 second
+                peerConnection.onicecandidate = (event) => {
+                    if (!event.candidate) {
+                        // ICE gathering complete
+                        clearTimeout(timeout);
+                        resolve();
+                    }
+                };
+            });
 
             // Store offer in KV first, before showing the code to user
             try {
@@ -474,8 +483,18 @@
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
 
-                // Note: We don't wait for ICE gathering to complete
-                // The answer will work with trickle ICE
+                // Wait briefly for at least some ICE candidates to be gathered
+                // This ensures the SDP includes candidate information for better connectivity
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(resolve, 1000); // Wait up to 1 second
+                    peerConnection.onicecandidate = (event) => {
+                        if (!event.candidate) {
+                            // ICE gathering complete
+                            clearTimeout(timeout);
+                            resolve();
+                        }
+                    };
+                });
 
                 // Store answer in KV
                 const answerResponse = await fetch('/api/file-share-session', {
