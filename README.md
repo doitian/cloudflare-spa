@@ -10,7 +10,6 @@ A collection of self-contained SPAs (HTML + CSS + JavaScript in single files) se
 
 - **WebRTC File Share** - Share files directly between browsers using WebRTC
 - **Search Results** - Multi-search engine opener
-- **Example App** - Sample SPA template
 
 ## Structure
 
