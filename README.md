@@ -1,10 +1,10 @@
 # cloudflare-spa
 
-Single Page Applications deployed to Cloudflare Pages
+Single Page Applications deployed to Cloudflare Workers
 
 ## Overview
 
-This repository hosts a collection of Single Page Applications (SPAs), where each app is a self-contained HTML file with inline CSS and JavaScript.
+A collection of self-contained SPAs (HTML + CSS + JavaScript in single files) served via Cloudflare Workers with static assets.
 
 ## Available SPAs
 
@@ -13,49 +13,31 @@ This repository hosts a collection of Single Page Applications (SPAs), where eac
 
 ## Structure
 
-- `public/` - Static HTML files
-  - `index.html` - Root page that lists all available SPAs
-  - `*.html` - Self-contained SPA files
-- `index.js` - Main worker handling all API endpoints
-- `wrangler.jsonc` - Cloudflare configuration
+```
+├── public/          # Static HTML files
+├── index.js         # Worker with API endpoints
+└── wrangler.jsonc   # Worker configuration
+```
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on deploying to Cloudflare Pages.
-
-**Quick Setup:**
-- Build command: `exit 0`
-- Build output directory: `public`
-- Configure KV namespace binding for `WEBRTC_SESSIONS`
-
-## Adding a New SPA
-
-1. Create a new HTML file in the `public/` directory (e.g., `public/my-app.html`)
-2. Include all HTML, CSS, and JavaScript in a single file
-3. Add your app to the list in `public/index.html`:
-
-```javascript
-const spas = [
-    // ... existing apps
-    {
-        name: 'My App',
-        description: 'Description of my app',
-        url: 'my-app.html'
-    }
-];
-```
-
-4. Commit and push your changes
+See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment instructions.
 
 ## Local Development
 
-Simply open any HTML file in your browser to test locally. No build step required!
+Test SPAs locally by opening HTML files in your browser.
 
-For testing Pages Functions locally:
+For the Worker with API endpoints:
 
 ```bash
-npx wrangler pages dev public --kv WEBRTC_SESSIONS
+npx wrangler dev
 ```
+
+## Adding a New SPA
+
+1. Create `public/my-app.html` with inline CSS/JavaScript
+2. Add entry to the app list in `public/index.html`
+3. Deploy with `npx wrangler deploy`
 
 ## License
 
