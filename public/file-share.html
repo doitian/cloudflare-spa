@@ -250,7 +250,7 @@
         }
 
         .message-sent {
-            background: linear-gradient(135deg, #0277bd 0%, #01579b 100%);
+            background: #1565c0;
             color: white;
             margin-left: auto;
             text-align: right;
@@ -264,8 +264,15 @@
 
         .message-label {
             font-size: 0.8em;
-            opacity: 0.8;
             margin-bottom: 5px;
+        }
+
+        .message-sent .message-label {
+            opacity: 0.95;
+        }
+
+        .message-received .message-label {
+            opacity: 0.7;
         }
 
         .message-text {
