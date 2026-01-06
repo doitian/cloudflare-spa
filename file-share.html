@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WebRTC File Share - Cloudflare SPA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #4facfe;
+            margin-bottom: 10px;
+            font-size: 2.5em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #4facfe;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .section {
+            margin: 30px 0;
+            padding: 30px;
+            background: #f9f9f9;
+            border-radius: 8px;
+        }
+
+        .section h2 {
+            color: #333;
+            margin-bottom: 20px;
+            font-size: 1.5em;
+        }
+
+        .button-group {
+            display: flex;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        button {
+            padding: 12px 24px;
+            font-size: 1em;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(79, 172, 254, 0.3);
+        }
+
+        .btn-secondary {
+            background: #e0e0e0;
+            color: #333;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: #d0d0d0;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .session-code {
+            font-size: 2em;
+            font-weight: bold;
+            color: #4facfe;
+            padding: 20px;
+            background: white;
+            border-radius: 8px;
+            text-align: center;
+            margin: 20px 0;
+            letter-spacing: 0.1em;
+            border: 2px dashed #4facfe;
+        }
+
+        input[type="text"] {
+            width: 100%;
+            padding: 12px;
+            font-size: 1.1em;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            margin: 10px 0;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        input[type="file"] {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .file-label:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(79, 172, 254, 0.3);
+        }
+
+        .status {
+            padding: 15px;
+            border-radius: 6px;
+            margin: 15px 0;
+            font-weight: 500;
+        }
+
+        .status-info {
+            background: #e8f4f8;
+            color: #0277bd;
+            border-left: 4px solid #0277bd;
+        }
+
+        .status-success {
+            background: #e8f5e9;
+            color: #2e7d32;
+            border-left: 4px solid #2e7d32;
+        }
+
+        .status-error {
+            background: #ffebee;
+            color: #c62828;
+            border-left: 4px solid #c62828;
+        }
+
+        .status-warning {
+            background: #fff3e0;
+            color: #ef6c00;
+            border-left: 4px solid #ef6c00;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        .file-info {
+            padding: 10px;
+            background: white;
+            border-radius: 6px;
+            margin: 10px 0;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 30px;
+            background: #e0e0e0;
+            border-radius: 15px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: bold;
+        }
+
+        footer {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #eee;
+            text-align: center;
+            color: #666;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+        
+        <h1>📁 WebRTC File Share</h1>
+        <p class="subtitle">Share files directly between browsers using WebRTC</p>
+
+        <!-- Initial choice section -->
+        <div id="choiceSection" class="section">
+            <h2>Get Started</h2>
+            <p style="margin-bottom: 20px;">Choose an option to start sharing files:</p>
+            <div class="button-group">
+                <button class="btn-primary" id="createBtn">Create Session</button>
+                <button class="btn-secondary" id="joinBtn">Join Session</button>
+            </div>
+        </div>
+
+        <!-- Create session section -->
+        <div id="createSection" class="section hidden">
+            <h2>Create Session</h2>
+            <p>Share this code with the person you want to share files with:</p>
+            <div class="session-code" id="sessionCode">------</div>
+            <div class="status status-info">
+                Waiting for peer to join...
+            </div>
+        </div>
+
+        <!-- Join session section -->
+        <div id="joinSection" class="section hidden">
+            <h2>Join Session</h2>
+            <p>Enter the session code:</p>
+            <input type="text" id="codeInput" placeholder="Enter 6-digit code" maxlength="6" />
+            <div class="button-group">
+                <button class="btn-primary" id="connectBtn">Connect</button>
+                <button class="btn-secondary" id="cancelJoinBtn">Cancel</button>
+            </div>
+        </div>
+
+        <!-- File transfer section -->
+        <div id="transferSection" class="section hidden">
+            <h2>File Transfer</h2>
+            <div id="connectionStatus" class="status status-info">Establishing connection...</div>
+            
+            <div id="sendArea" class="hidden">
+                <h3 style="margin: 20px 0 10px 0;">Send File</h3>
+                <input type="file" id="fileInput" />
+                <label for="fileInput" class="file-label">Choose File</label>
+                <div id="selectedFile" class="file-info hidden"></div>
+                <button class="btn-primary" id="sendBtn" disabled>Send File</button>
+            </div>
+
+            <div id="receiveArea" class="hidden">
+                <h3 style="margin: 20px 0 10px 0;">Receiving File</h3>
+                <div id="receivingFile" class="file-info"></div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill">0%</div>
+                </div>
+            </div>
+        </div>
+
+        <footer>
+            <p>Files are transferred directly between browsers. Nothing is stored on servers.</p>
+        </footer>
+    </div>
+
+    <script>
+        // WebRTC configuration
+        const rtcConfig = {
+            iceServers: [
+                { urls: 'stun:stun.l.google.com:19302' },
+                { urls: 'stun:stun1.l.google.com:19302' }
+            ]
+        };
+
+        let peerConnection = null;
+        let dataChannel = null;
+        let sessionCode = null;
+        let isCreator = false;
+        let fileReader = null;
+        let receivedBuffer = [];
+        let receivedSize = 0;
+        let fileMetadata = null;
+
+        // DOM elements
+        const choiceSection = document.getElementById('choiceSection');
+        const createSection = document.getElementById('createSection');
+        const joinSection = document.getElementById('joinSection');
+        const transferSection = document.getElementById('transferSection');
+        const sessionCodeEl = document.getElementById('sessionCode');
+        const codeInput = document.getElementById('codeInput');
+        const fileInput = document.getElementById('fileInput');
+        const selectedFileEl = document.getElementById('selectedFile');
+        const sendBtn = document.getElementById('sendBtn');
+        const connectionStatus = document.getElementById('connectionStatus');
+        const sendArea = document.getElementById('sendArea');
+        const receiveArea = document.getElementById('receiveArea');
+        const receivingFileEl = document.getElementById('receivingFile');
+        const progressFill = document.getElementById('progressFill');
+
+        // Generate random 6-digit alphanumeric code
+        function generateCode() {
+            const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+            let code = '';
+            for (let i = 0; i < 6; i++) {
+                code += chars.charAt(Math.floor(Math.random() * chars.length));
+            }
+            return code;
+        }
+
+        // Create session
+        async function createSession() {
+            isCreator = true;
+            sessionCode = generateCode();
+            sessionCodeEl.textContent = sessionCode;
+            
+            choiceSection.classList.add('hidden');
+            createSection.classList.remove('hidden');
+            transferSection.classList.remove('hidden');
+
+            // Create peer connection
+            peerConnection = new RTCPeerConnection(rtcConfig);
+            
+            // Create data channel
+            dataChannel = peerConnection.createDataChannel('fileTransfer');
+            setupDataChannel();
+
+            // Handle ICE candidates
+            const iceCandidates = [];
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate) {
+                    iceCandidates.push(event.candidate);
+                }
+            };
+
+            // Create offer
+            const offer = await peerConnection.createOffer();
+            await peerConnection.setLocalDescription(offer);
+
+            // Wait for ICE gathering to complete
+            await new Promise((resolve) => {
+                if (peerConnection.iceGatheringState === 'complete') {
+                    resolve();
+                } else {
+                    peerConnection.addEventListener('icegatheringstatechange', () => {
+                        if (peerConnection.iceGatheringState === 'complete') {
+                            resolve();
+                        }
+                    });
+                }
+            });
+
+            // Store offer in KV
+            try {
+                const response = await fetch('/api/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: sessionCode,
+                        offer: peerConnection.localDescription
+                    })
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to create session');
+                }
+
+                // Start polling for answer
+                pollForAnswer();
+            } catch (error) {
+                showStatus('error', 'Failed to create session: ' + error.message);
+            }
+        }
+
+        // Poll for answer from joiner
+        async function pollForAnswer() {
+            const maxAttempts = 60; // 5 minutes
+            let attempts = 0;
+
+            const poll = async () => {
+                if (attempts >= maxAttempts) {
+                    showStatus('error', 'Session expired. Please create a new session.');
+                    return;
+                }
+
+                try {
+                    const response = await fetch(`/api/session?code=${sessionCode}_answer`);
+                    
+                    if (response.ok) {
+                        const data = await response.json();
+                        if (data.offer) {
+                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
+                            showStatus('success', 'Connected! You can now send files.');
+                            return;
+                        }
+                    }
+                } catch (error) {
+                    console.error('Polling error:', error);
+                }
+
+                attempts++;
+                setTimeout(poll, 5000); // Poll every 5 seconds
+            };
+
+            poll();
+        }
+
+        // Join session
+        async function joinSession() {
+            const code = codeInput.value.trim().toUpperCase();
+            
+            if (code.length !== 6) {
+                showStatus('error', 'Please enter a valid 6-digit code');
+                return;
+            }
+
+            sessionCode = code;
+            isCreator = false;
+
+            try {
+                // Get offer from KV
+                const response = await fetch(`/api/session?code=${code}`);
+                
+                if (!response.ok) {
+                    throw new Error('Session not found or expired');
+                }
+
+                const data = await response.json();
+                const offer = data.offer;
+
+                joinSection.classList.add('hidden');
+                transferSection.classList.remove('hidden');
+
+                // Create peer connection
+                peerConnection = new RTCPeerConnection(rtcConfig);
+
+                // Handle data channel
+                peerConnection.ondatachannel = (event) => {
+                    dataChannel = event.channel;
+                    setupDataChannel();
+                };
+
+                // Set remote description
+                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+
+                // Create answer
+                const answer = await peerConnection.createAnswer();
+                await peerConnection.setLocalDescription(answer);
+
+                // Wait for ICE gathering
+                await new Promise((resolve) => {
+                    if (peerConnection.iceGatheringState === 'complete') {
+                        resolve();
+                    } else {
+                        peerConnection.addEventListener('icegatheringstatechange', () => {
+                            if (peerConnection.iceGatheringState === 'complete') {
+                                resolve();
+                            }
+                        });
+                    }
+                });
+
+                // Store answer in KV
+                const answerResponse = await fetch('/api/session', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        code: `${code}_answer`,
+                        offer: peerConnection.localDescription
+                    })
+                });
+
+                if (!answerResponse.ok) {
+                    throw new Error('Failed to store answer');
+                }
+
+                showStatus('info', 'Waiting for connection...');
+            } catch (error) {
+                showStatus('error', 'Failed to join session: ' + error.message);
+            }
+        }
+
+        // Setup data channel handlers
+        function setupDataChannel() {
+            dataChannel.onopen = () => {
+                showStatus('success', 'Connected! You can now send files.');
+                sendArea.classList.remove('hidden');
+            };
+
+            dataChannel.onclose = () => {
+                showStatus('warning', 'Connection closed');
+                sendArea.classList.add('hidden');
+            };
+
+            dataChannel.onmessage = (event) => {
+                if (typeof event.data === 'string') {
+                    // Received metadata
+                    fileMetadata = JSON.parse(event.data);
+                    receivedBuffer = [];
+                    receivedSize = 0;
+                    receiveArea.classList.remove('hidden');
+                    receivingFileEl.textContent = `Receiving: ${fileMetadata.name} (${formatBytes(fileMetadata.size)})`;
+                    updateProgress(0);
+                } else {
+                    // Received file chunk
+                    receivedBuffer.push(event.data);
+                    receivedSize += event.data.byteLength;
+                    
+                    const progress = (receivedSize / fileMetadata.size) * 100;
+                    updateProgress(progress);
+
+                    if (receivedSize === fileMetadata.size) {
+                        // File complete
+                        const blob = new Blob(receivedBuffer, { type: fileMetadata.type });
+                        downloadFile(blob, fileMetadata.name);
+                        receiveArea.classList.add('hidden');
+                        showStatus('success', 'File received successfully!');
+                    }
+                }
+            };
+        }
+
+        // Send file
+        async function sendFile() {
+            const file = fileInput.files[0];
+            if (!file || !dataChannel || dataChannel.readyState !== 'open') {
+                return;
+            }
+
+            sendBtn.disabled = true;
+            showStatus('info', 'Sending file...');
+
+            // Send metadata first
+            const metadata = {
+                name: file.name,
+                size: file.size,
+                type: file.type
+            };
+            dataChannel.send(JSON.stringify(metadata));
+
+            // Send file in chunks
+            const chunkSize = 16384; // 16KB chunks
+            let offset = 0;
+
+            const readSlice = () => {
+                const slice = file.slice(offset, offset + chunkSize);
+                const reader = new FileReader();
+                
+                reader.onload = (event) => {
+                    dataChannel.send(event.target.result);
+                    offset += event.target.result.byteLength;
+                    
+                    if (offset < file.size) {
+                        readSlice();
+                    } else {
+                        showStatus('success', 'File sent successfully!');
+                        sendBtn.disabled = false;
+                    }
+                };
+                
+                reader.readAsArrayBuffer(slice);
+            };
+
+            readSlice();
+        }
+
+        // Show status message
+        function showStatus(type, message) {
+            connectionStatus.className = `status status-${type}`;
+            connectionStatus.textContent = message;
+        }
+
+        // Update progress bar
+        function updateProgress(percent) {
+            progressFill.style.width = percent + '%';
+            progressFill.textContent = Math.round(percent) + '%';
+        }
+
+        // Download file
+        function downloadFile(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // Format bytes to human readable
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+        }
+
+        // Event listeners
+        document.getElementById('createBtn').addEventListener('click', createSession);
+        document.getElementById('joinBtn').addEventListener('click', () => {
+            choiceSection.classList.add('hidden');
+            joinSection.classList.remove('hidden');
+        });
+        document.getElementById('connectBtn').addEventListener('click', joinSession);
+        document.getElementById('cancelJoinBtn').addEventListener('click', () => {
+            joinSection.classList.add('hidden');
+            choiceSection.classList.remove('hidden');
+            codeInput.value = '';
+        });
+        
+        fileInput.addEventListener('change', (event) => {
+            const file = event.target.files[0];
+            if (file) {
+                selectedFileEl.textContent = `Selected: ${file.name} (${formatBytes(file.size)})`;
+                selectedFileEl.classList.remove('hidden');
+                sendBtn.disabled = false;
+            }
+        });
+
+        sendBtn.addEventListener('click', sendFile);
+    </script>
+</body>
+</html>
