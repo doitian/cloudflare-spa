@@ -1,6 +1,20 @@
 // API endpoint for managing WebRTC sessions
 // This handles creating new sessions and retrieving existing ones
 
+// CORS headers
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type',
+};
+
+// Handle OPTIONS request for CORS
+export async function onRequestOptions() {
+  return new Response(null, {
+    headers: corsHeaders
+  });
+}
+
 export async function onRequestPost({ request, env }) {
   try {
     const { code, offer } = await request.json();
@@ -8,7 +22,10 @@ export async function onRequestPost({ request, env }) {
     if (!code || !offer) {
       return new Response(JSON.stringify({ error: 'Missing code or offer' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       });
     }
 
@@ -19,12 +36,18 @@ export async function onRequestPost({ request, env }) {
 
     return new Response(JSON.stringify({ success: true, code }), {
       status: 200,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
     });
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
     });
   }
 }
@@ -37,7 +60,10 @@ export async function onRequestGet({ request, env }) {
     if (!code) {
       return new Response(JSON.stringify({ error: 'Missing code parameter' }), {
         status: 400,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       });
     }
 
@@ -46,7 +72,10 @@ export async function onRequestGet({ request, env }) {
     if (!offerData) {
       return new Response(JSON.stringify({ error: 'Session not found or expired' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       });
     }
 
@@ -57,18 +86,27 @@ export async function onRequestGet({ request, env }) {
         offer: offer 
       }), {
         status: 200,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       });
     } catch (parseError) {
       return new Response(JSON.stringify({ error: 'Invalid session data' }), {
         status: 500,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 
+          'Content-Type': 'application/json',
+          ...corsHeaders
+        }
       });
     }
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
-      headers: { 'Content-Type': 'application/json' }
+      headers: { 
+        'Content-Type': 'application/json',
+        ...corsHeaders
+      }
     });
   }
 }

@@ -18,6 +18,10 @@ When setting up your Cloudflare Pages project, use the following configuration:
 - **Build output directory**: `public`
 - **Root directory**: `/` (or leave empty)
 
+**Important:** The `/functions` directory must remain at the project root (not inside `public/`). Cloudflare Pages will automatically detect and deploy:
+- Static files from `/public` directory
+- API endpoints from `/functions` directory
+
 ### Why `exit 0` Works
 
 The build command `exit 0` tells Cloudflare Pages to skip the build step. This is appropriate for this project because:
@@ -26,6 +30,15 @@ The build command `exit 0` tells Cloudflare Pages to skip the build step. This i
 2. The `/functions` directory contains **Cloudflare Pages Functions** that are deployed as-is without compilation
 3. No dependencies need to be installed (no `package.json`)
 4. No transpilation or bundling is required
+
+### Troubleshooting 404 Errors on API Endpoints
+
+If you're getting 404 errors on `/api/file-share-session`:
+
+1. **Verify Functions are enabled**: Go to your Pages project → Settings → Functions and ensure it's enabled
+2. **Check directory structure**: Ensure `/functions` is at the project root, not inside `/public`
+3. **Confirm KV binding**: The function requires the `WEBRTC_SESSIONS` KV namespace binding
+4. **Wait for deployment**: After pushing changes, wait for the deployment to complete before testing
 
 ### Environment Configuration
 
