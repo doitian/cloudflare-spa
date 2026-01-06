@@ -364,30 +364,13 @@
             dataChannel = peerConnection.createDataChannel('fileTransfer');
             setupDataChannel();
 
-            // Handle ICE candidates
-            const iceCandidates = [];
-            peerConnection.onicecandidate = (event) => {
-                if (event.candidate) {
-                    iceCandidates.push(event.candidate);
-                }
-            };
-
             // Create offer
             const offer = await peerConnection.createOffer();
             await peerConnection.setLocalDescription(offer);
 
-            // Wait for ICE gathering to complete
-            await new Promise((resolve) => {
-                if (peerConnection.iceGatheringState === 'complete') {
-                    resolve();
-                } else {
-                    peerConnection.addEventListener('icegatheringstatechange', () => {
-                        if (peerConnection.iceGatheringState === 'complete') {
-                            resolve();
-                        }
-                    });
-                }
-            });
+            // Note: We don't wait for ICE gathering to complete
+            // The offer will work with trickle ICE, and candidates will be
+            // included in the localDescription as they're gathered
 
             // Store offer in KV first, before showing the code to user
             try {
@@ -491,18 +474,8 @@
                 const answer = await peerConnection.createAnswer();
                 await peerConnection.setLocalDescription(answer);
 
-                // Wait for ICE gathering
-                await new Promise((resolve) => {
-                    if (peerConnection.iceGatheringState === 'complete') {
-                        resolve();
-                    } else {
-                        peerConnection.addEventListener('icegatheringstatechange', () => {
-                            if (peerConnection.iceGatheringState === 'complete') {
-                                resolve();
-                            }
-                        });
-                    }
-                });
+                // Note: We don't wait for ICE gathering to complete
+                // The answer will work with trickle ICE
 
                 // Store answer in KV
                 const answerResponse = await fetch('/api/file-share-session', {
