@@ -15,7 +15,7 @@ When setting up your Cloudflare Pages project, use the following configuration:
 
 - **Framework preset**: None
 - **Build command**: `exit 0`
-- **Build output directory**: `/` (or leave empty)
+- **Build output directory**: `public`
 - **Root directory**: `/` (or leave empty)
 
 ### Why `exit 0` Works
@@ -54,7 +54,7 @@ For local development with Wrangler:
 npm install -g wrangler
 
 # Run local development server
-npx wrangler pages dev . --kv WEBRTC_SESSIONS
+npx wrangler pages dev public --kv WEBRTC_SESSIONS
 ```
 
 **Note**: For local development, Wrangler will create a local KV namespace automatically.
@@ -63,10 +63,11 @@ npx wrangler pages dev . --kv WEBRTC_SESSIONS
 
 ```
 cloudflare-spa/
-├── index.html              # Homepage listing all SPAs
-├── file-share.html         # WebRTC File Sharing SPA
-├── search.html             # Search results SPA
-├── example.html            # Example SPA
+├── public/                 # Static HTML files
+│   ├── index.html          # Homepage listing all SPAs
+│   ├── file-share.html     # WebRTC File Sharing SPA
+│   ├── search.html         # Search results SPA
+│   └── example.html        # Example SPA
 ├── functions/              # Cloudflare Pages Functions
 │   └── api/
 │       └── file-share-session.js  # API endpoint for WebRTC session coordination

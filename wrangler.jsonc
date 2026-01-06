@@ -2,7 +2,7 @@
   "name": "cloudflare-spa",
   "compatibility_date": "2025-12-31",
   "assets": {
-    "directory": "."
+    "directory": "public"
   },
   "kv_namespaces": [
     {

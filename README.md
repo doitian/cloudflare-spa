@@ -14,8 +14,9 @@ This repository hosts a collection of Single Page Applications (SPAs), where eac
 
 ## Structure
 
-- `index.html` - Root page that lists all available SPAs
-- `*.html` - Self-contained SPA files
+- `public/` - Static HTML files
+  - `index.html` - Root page that lists all available SPAs
+  - `*.html` - Self-contained SPA files
 - `functions/` - Cloudflare Pages Functions (serverless API endpoints)
 - `wrangler.jsonc` - Cloudflare configuration
 
@@ -25,14 +26,14 @@ See [DEPLOYMENT.md](DEPLOYMENT.md) for detailed instructions on deploying to Clo
 
 **Quick Setup:**
 - Build command: `exit 0`
-- Build output directory: `/`
+- Build output directory: `public`
 - Configure KV namespace binding for `WEBRTC_SESSIONS`
 
 ## Adding a New SPA
 
-1. Create a new HTML file in the root directory (e.g., `my-app.html`)
+1. Create a new HTML file in the `public/` directory (e.g., `public/my-app.html`)
 2. Include all HTML, CSS, and JavaScript in a single file
-3. Add your app to the list in `index.html`:
+3. Add your app to the list in `public/index.html`:
 
 ```javascript
 const spas = [
@@ -54,7 +55,7 @@ Simply open any HTML file in your browser to test locally. No build step require
 For testing Pages Functions locally:
 
 ```bash
-npx wrangler pages dev . --kv WEBRTC_SESSIONS
+npx wrangler pages dev public --kv WEBRTC_SESSIONS
 ```
 
 ## License
