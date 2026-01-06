@@ -17,7 +17,7 @@ This repository hosts a collection of Single Page Applications (SPAs), where eac
 - `public/` - Static HTML files
   - `index.html` - Root page that lists all available SPAs
   - `*.html` - Self-contained SPA files
-- `functions/` - Cloudflare Pages Functions (serverless API endpoints)
+- `index.js` - Main worker handling all API endpoints
 - `wrangler.jsonc` - Cloudflare configuration
 
 ## Deployment

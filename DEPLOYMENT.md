@@ -18,16 +18,14 @@ When setting up your Cloudflare Pages project, use the following configuration:
 - **Build output directory**: `public`
 - **Root directory**: `/` (or leave empty)
 
-**Important:** The `/functions` directory must remain at the project root (not inside `public/`). Cloudflare Pages will automatically detect and deploy:
-- Static files from `/public` directory
-- API endpoints from `/functions` directory
+**Architecture:** This project uses a single `index.js` worker to handle all API endpoints, with static files served from the `/public` directory.
 
 ### Why `exit 0` Works
 
 The build command `exit 0` tells Cloudflare Pages to skip the build step. This is appropriate for this project because:
 
 1. All HTML files are **self-contained** with inline CSS and JavaScript - no build step needed
-2. The `/functions` directory contains **Cloudflare Pages Functions** that are deployed as-is without compilation
+2. The `index.js` worker handles API routing without requiring compilation
 3. No dependencies need to be installed (no `package.json`)
 4. No transpilation or bundling is required
 
@@ -35,9 +33,9 @@ The build command `exit 0` tells Cloudflare Pages to skip the build step. This i
 
 If you're getting 404 errors on `/api/file-share-session`:
 
-1. **Verify Functions are enabled**: Go to your Pages project → Settings → Functions and ensure it's enabled
-2. **Check directory structure**: Ensure `/functions` is at the project root, not inside `/public`
-3. **Confirm KV binding**: The function requires the `WEBRTC_SESSIONS` KV namespace binding
+1. **Verify worker deployment**: Check that `index.js` is deployed correctly
+2. **Confirm KV binding**: The worker requires the `WEBRTC_SESSIONS` KV namespace binding
+3. **Check wrangler.jsonc**: Ensure `main` entry points to `index.js`
 4. **Wait for deployment**: After pushing changes, wait for the deployment to complete before testing
 
 ### Environment Configuration
@@ -81,20 +79,18 @@ cloudflare-spa/
 │   ├── file-share.html     # WebRTC File Sharing SPA
 │   ├── search.html         # Search results SPA
 │   └── example.html        # Example SPA
-├── functions/              # Cloudflare Pages Functions
-│   └── api/
-│       └── file-share-session.js  # API endpoint for WebRTC session coordination
+├── index.js                # Main worker handling all API endpoints
 └── wrangler.jsonc          # Cloudflare configuration
 ```
 
 ## How the WebRTC File Sharing Works
 
 1. **No Build Required**: All HTML files are self-contained
-2. **Pages Functions**: The `/functions/api/file-share-session.js` endpoint handles:
+2. **Worker API**: The `index.js` worker handles all `/api/file-share-session` requests:
    - Storing WebRTC offers/answers in KV
    - Retrieving session data by code
    - Automatic expiration after 24 hours
-3. **Direct Deployment**: Files are served as-is from the repository
+3. **Direct Deployment**: Static files served from `/public`, API routed through worker
 
 ## Testing the Deployment
 
@@ -116,13 +112,14 @@ If you see errors about `WEBRTC_SESSIONS` not being found:
 2. Verify the binding variable name is exactly `WEBRTC_SESSIONS`
 3. Check that the KV namespace ID in `wrangler.jsonc` matches your namespace
 
-### Functions Not Working
+### Worker Not Working
 
 If the API endpoints return 404:
 
-1. Ensure the `/functions` directory is included in your deployment
-2. Check Cloudflare Pages Functions logs in the dashboard
-3. Verify the Functions feature is enabled for your Pages project
+1. Ensure `index.js` is at the project root
+2. Check that `wrangler.jsonc` has `"main": "index.js"`
+3. Verify the worker is deployed (check deployment logs)
+4. Ensure KV binding is configured
 
 ## Additional Resources
 
