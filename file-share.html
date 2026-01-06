@@ -294,6 +294,11 @@
     </div>
 
     <script>
+        // Configuration constants
+        const CHUNK_SIZE = 16384; // 16KB chunks for file transfer
+        const MAX_POLLING_ATTEMPTS = 60; // Maximum polling attempts (5 minutes at 5s interval)
+        const POLLING_INTERVAL = 5000; // Poll every 5 seconds
+
         // WebRTC configuration
         const rtcConfig = {
             iceServers: [
@@ -403,11 +408,10 @@
 
         // Poll for answer from joiner
         async function pollForAnswer() {
-            const maxAttempts = 60; // 5 minutes
             let attempts = 0;
 
             const poll = async () => {
-                if (attempts >= maxAttempts) {
+                if (attempts >= MAX_POLLING_ATTEMPTS) {
                     showStatus('error', 'Session expired. Please create a new session.');
                     return;
                 }
@@ -428,7 +432,7 @@
                 }
 
                 attempts++;
-                setTimeout(poll, 5000); // Poll every 5 seconds
+                setTimeout(poll, POLLING_INTERVAL);
             };
 
             poll();
@@ -568,11 +572,10 @@
             dataChannel.send(JSON.stringify(metadata));
 
             // Send file in chunks
-            const chunkSize = 16384; // 16KB chunks
             let offset = 0;
 
             const readSlice = () => {
-                const slice = file.slice(offset, offset + chunkSize);
+                const slice = file.slice(offset, offset + CHUNK_SIZE);
                 const reader = new FileReader();
                 
                 reader.onload = (event) => {

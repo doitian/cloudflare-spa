@@ -50,13 +50,21 @@ export async function onRequestGet({ request, env }) {
       });
     }
 
-    return new Response(JSON.stringify({ 
-      success: true, 
-      offer: JSON.parse(offerData) 
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' }
-    });
+    try {
+      const offer = JSON.parse(offerData);
+      return new Response(JSON.stringify({ 
+        success: true, 
+        offer: offer 
+      }), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    } catch (parseError) {
+      return new Response(JSON.stringify({ error: 'Invalid session data' }), {
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      });
+    }
   } catch (error) {
     return new Response(JSON.stringify({ error: error.message }), {
       status: 500,
