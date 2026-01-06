@@ -1,5 +1,14 @@
 // Main worker entry point for all API endpoints
 
+// Helper function to generate KV keys for WebRTC sessions
+function getOfferKey(code) {
+  return code;
+}
+
+function getAnswerKey(code) {
+  return `${code}_answer`;
+}
+
 // Handle file share session API endpoints
 async function handleFileShareSession(request, env) {
   const url = new URL(request.url);
@@ -116,7 +125,7 @@ async function handleWebSocket(request, env) {
       
       if (message.type === 'offer') {
         // Store offer in KV
-        await env.WEBRTC_SESSIONS.put(message.code, JSON.stringify({
+        await env.WEBRTC_SESSIONS.put(getOfferKey(message.code), JSON.stringify({
           offer: message.offer,
           timestamp: Date.now()
         }), {
@@ -128,7 +137,7 @@ async function handleWebSocket(request, env) {
         
         // Start listening for answer
         const listenForAnswer = async () => {
-          const answerKey = `${message.code}_answer`;
+          const answerKey = getAnswerKey(message.code);
           let attempts = 0;
           const maxAttempts = 60;
           
@@ -157,7 +166,7 @@ async function handleWebSocket(request, env) {
         listenForAnswer();
       } else if (message.type === 'get-offer') {
         // Retrieve offer from KV
-        const offerData = await env.WEBRTC_SESSIONS.get(message.code);
+        const offerData = await env.WEBRTC_SESSIONS.get(getOfferKey(message.code));
         
         if (!offerData) {
           server.send(JSON.stringify({ 
@@ -173,7 +182,7 @@ async function handleWebSocket(request, env) {
         }
       } else if (message.type === 'answer') {
         // Store answer in KV
-        const answerKey = `${message.code}_answer`;
+        const answerKey = getAnswerKey(message.code);
         await env.WEBRTC_SESSIONS.put(answerKey, JSON.stringify({
           answer: message.answer,
           timestamp: Date.now()

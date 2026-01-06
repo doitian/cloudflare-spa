@@ -343,13 +343,17 @@
         }
 
         // Connect to WebSocket for signaling
+        function closeWebSocket() {
+            if (signalingWs) {
+                signalingWs.close();
+                signalingWs = null;
+            }
+        }
+
         function connectWebSocket() {
             return new Promise((resolve, reject) => {
                 // Close any existing connection
-                if (signalingWs) {
-                    signalingWs.close();
-                    signalingWs = null;
-                }
+                closeWebSocket();
 
                 const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
                 const wsUrl = `${protocol}//${window.location.host}/api/webrtc`;
@@ -373,11 +377,7 @@
         }
 
         // Cleanup WebSocket on page unload
-        window.addEventListener('beforeunload', () => {
-            if (signalingWs) {
-                signalingWs.close();
-            }
-        });
+        window.addEventListener('beforeunload', closeWebSocket);
 
         // Create session
         async function createSession() {
