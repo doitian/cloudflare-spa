@@ -77,8 +77,7 @@ cloudflare-spa/
 ├── public/                 # Static HTML files
 │   ├── index.html          # Homepage listing all SPAs
 │   ├── file-share.html     # WebRTC File Sharing SPA
-│   ├── search.html         # Search results SPA
-│   └── example.html        # Example SPA
+│   └── search.html         # Search results SPA
 ├── index.js                # Main worker handling all API endpoints
 └── wrangler.jsonc          # Cloudflare configuration
 ```
