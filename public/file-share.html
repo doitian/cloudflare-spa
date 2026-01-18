@@ -119,10 +119,6 @@
             border: 2px dashed #4facfe;
         }
 
-        .session-code .letter {
-            color: #4facfe;
-        }
-
         .session-code .number {
             color: #ff6b6b;
         }
@@ -434,7 +430,7 @@
                 return code; // Return as-is if invalid
             }
             return code.split('').map(char => {
-                const isNumber = /[0-9]/.test(char);
+                const isNumber = char >= '0' && char <= '9';
                 const className = isNumber ? 'number' : 'letter';
                 return `<span class="${className}">${char}</span>`;
             }).join('');
