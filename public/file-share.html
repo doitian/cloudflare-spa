@@ -429,6 +429,10 @@
 
         // Format session code with colored letters and numbers
         function formatSessionCode(code) {
+            // Validate that code contains only alphanumeric characters to prevent XSS
+            if (!/^[A-Z0-9]+$/.test(code)) {
+                return code; // Return as-is if invalid
+            }
             return code.split('').map(char => {
                 const isNumber = /[0-9]/.test(char);
                 const className = isNumber ? 'number' : 'letter';
