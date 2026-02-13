@@ -1,6 +1,10 @@
 // SessionManager Durable Object
 // Manages WebSocket connections and session state for WebRTC signaling
 
+// Constants
+const SESSION_MAX_AGE_MS = 86400000; // 24 hours
+const SESSION_CLEANUP_AFTER_DISCONNECT_MS = 3600000; // 1 hour
+
 export class SessionManager {
   constructor(state, env) {
     this.state = state;
@@ -110,7 +114,7 @@ export class SessionManager {
         
         // Clean up session if both connections are closed and it's been more than 1 hour
         if (!session.creatorWs && !session.joinerWs && 
-            Date.now() - session.createdAt > 3600000) {
+            Date.now() - session.createdAt > SESSION_CLEANUP_AFTER_DISCONNECT_MS) {
           this.sessions.delete(code);
         }
       }
@@ -196,7 +200,7 @@ export class SessionManager {
   }
 
   sendMessage(ws, message) {
-    if (ws && ws.readyState === WebSocket.READY_STATE_OPEN) {
+    if (ws && ws.readyState === WebSocket.OPEN) {
       try {
         ws.send(JSON.stringify(message));
       } catch (error) {
@@ -208,10 +212,9 @@ export class SessionManager {
   // Periodic cleanup of old sessions (could be called by alarm)
   async cleanup() {
     const now = Date.now();
-    const maxAge = 86400000; // 24 hours
 
     for (const [code, session] of this.sessions.entries()) {
-      if (now - session.createdAt > maxAge) {
+      if (now - session.createdAt > SESSION_MAX_AGE_MS) {
         // Close any open connections
         if (session.creatorWs) {
           session.creatorWs.close(1000, 'Session expired');

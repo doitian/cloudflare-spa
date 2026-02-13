@@ -492,7 +492,9 @@
                         const answer = await peerConnection.createAnswer();
                         await peerConnection.setLocalDescription(answer);
 
-                        // Wait briefly for ICE candidates
+                        // Wait for ICE candidates to be gathered
+                        // Note: Handler is set after setLocalDescription, but since JavaScript is 
+                        // single-threaded, it will be in place before ICE candidates are generated
                         await new Promise((resolve) => {
                             const timeout = setTimeout(resolve, 1000);
                             peerConnection.onicecandidate = (event) => {
@@ -568,7 +570,9 @@
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
 
-                // Wait briefly for at least some ICE candidates to be gathered
+                // Wait for ICE candidates to be gathered
+                // Note: Handler is set after setLocalDescription, but since JavaScript is 
+                // single-threaded, it will be in place before ICE candidates are generated
                 await new Promise((resolve) => {
                     const timeout = setTimeout(resolve, 1000);
                     peerConnection.onicecandidate = (event) => {
