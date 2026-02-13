@@ -377,8 +377,6 @@
     <script>
         // Configuration constants
         const CHUNK_SIZE = 16384; // 16KB chunks for file transfer
-        const MAX_POLLING_ATTEMPTS = 60; // Maximum polling attempts (5 minutes at 5s interval)
-        const POLLING_INTERVAL = 5000; // Poll every 5 seconds
 
         // WebRTC configuration
         const rtcConfig = {
@@ -396,6 +394,7 @@
         let receivedBuffer = [];
         let receivedSize = 0;
         let fileMetadata = null;
+        let signalingWs = null; // WebSocket for signaling
 
         // DOM elements
         const choiceSection = document.getElementById('choiceSection');
@@ -440,6 +439,106 @@
             }).join('');
         }
 
+        // Setup WebSocket connection for signaling
+        function setupSignalingWebSocket(code, role) {
+            return new Promise((resolve, reject) => {
+                const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+                const wsUrl = `${protocol}//${window.location.host}/api/ws/file-share-session?code=${code}&role=${role}`;
+                
+                signalingWs = new WebSocket(wsUrl);
+
+                signalingWs.onopen = () => {
+                    console.log('Signaling WebSocket connected');
+                    resolve();
+                };
+
+                signalingWs.onmessage = async (event) => {
+                    try {
+                        const message = JSON.parse(event.data);
+                        await handleSignalingMessage(message);
+                    } catch (error) {
+                        console.error('Error handling signaling message:', error);
+                    }
+                };
+
+                signalingWs.onerror = (error) => {
+                    console.error('WebSocket error:', error);
+                    showStatus('error', 'Connection error');
+                    reject(error);
+                };
+
+                signalingWs.onclose = () => {
+                    console.log('Signaling WebSocket closed');
+                };
+            });
+        }
+
+        // Handle incoming signaling messages
+        async function handleSignalingMessage(message) {
+            console.log('Received signaling message:', message.type);
+
+            switch (message.type) {
+                case 'offer-stored':
+                    // Offer successfully stored, waiting for joiner
+                    console.log('Offer stored with code:', message.code);
+                    break;
+
+                case 'offer':
+                    // Joiner received the offer from creator
+                    if (!isCreator && message.offer) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
+                        
+                        // Create answer
+                        const answer = await peerConnection.createAnswer();
+                        await peerConnection.setLocalDescription(answer);
+
+                        // Wait briefly for ICE candidates
+                        await new Promise((resolve) => {
+                            const timeout = setTimeout(resolve, 1000);
+                            peerConnection.onicecandidate = (event) => {
+                                if (!event.candidate) {
+                                    clearTimeout(timeout);
+                                    resolve();
+                                }
+                            };
+                        });
+
+                        // Send answer back through signaling WebSocket
+                        signalingWs.send(JSON.stringify({
+                            type: 'answer',
+                            answer: peerConnection.localDescription
+                        }));
+
+                        showStatus('info', 'Answer sent, waiting for connection...');
+                    }
+                    break;
+
+                case 'answer-stored':
+                    // Answer successfully stored
+                    console.log('Answer stored');
+                    break;
+
+                case 'answer':
+                    // Creator received the answer from joiner
+                    if (isCreator && message.answer) {
+                        await peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+                        // Connection will be established via dataChannel.onopen
+                    }
+                    break;
+
+                case 'error':
+                    showStatus('error', message.message || 'An error occurred');
+                    break;
+
+                case 'pong':
+                    // Keep-alive response
+                    break;
+
+                default:
+                    console.warn('Unknown message type:', message.type);
+            }
+        }
+
         // Create session
         async function createSession() {
             isCreator = true;
@@ -454,88 +553,47 @@
             createStatus.textContent = 'Creating session...';
             showStatus('info', 'Creating session...');
 
-            // Create peer connection
-            peerConnection = new RTCPeerConnection(rtcConfig);
-            
-            // Create data channel
-            dataChannel = peerConnection.createDataChannel('fileTransfer');
-            setupDataChannel();
-
-            // Create offer
-            const offer = await peerConnection.createOffer();
-            await peerConnection.setLocalDescription(offer);
-
-            // Wait briefly for at least some ICE candidates to be gathered
-            // This ensures the SDP includes candidate information for better connectivity
-            await new Promise((resolve) => {
-                const timeout = setTimeout(resolve, 1000); // Wait up to 1 second
-                peerConnection.onicecandidate = (event) => {
-                    if (!event.candidate) {
-                        // ICE gathering complete
-                        clearTimeout(timeout);
-                        resolve();
-                    }
-                };
-            });
-
-            // Store offer in KV first, before showing the code to user
             try {
-                const response = await fetch('/api/file-share-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        code: sessionCode,
-                        offer: peerConnection.localDescription
-                    })
+                // Setup WebSocket connection first
+                await setupSignalingWebSocket(sessionCode, 'creator');
+
+                // Create peer connection
+                peerConnection = new RTCPeerConnection(rtcConfig);
+                
+                // Create data channel
+                dataChannel = peerConnection.createDataChannel('fileTransfer');
+                setupDataChannel();
+
+                // Create offer
+                const offer = await peerConnection.createOffer();
+                await peerConnection.setLocalDescription(offer);
+
+                // Wait briefly for at least some ICE candidates to be gathered
+                await new Promise((resolve) => {
+                    const timeout = setTimeout(resolve, 1000);
+                    peerConnection.onicecandidate = (event) => {
+                        if (!event.candidate) {
+                            clearTimeout(timeout);
+                            resolve();
+                        }
+                    };
                 });
 
-                if (!response.ok) {
-                    throw new Error('Failed to create session');
-                }
+                // Send offer through WebSocket
+                signalingWs.send(JSON.stringify({
+                    type: 'offer',
+                    offer: peerConnection.localDescription
+                }));
 
-                // Now that offer is stored, show the session code to user
+                // Show the session code to user
                 sessionCodeEl.innerHTML = formatSessionCode(sessionCode);
                 createStatus.textContent = 'Waiting for peer to join...';
                 showStatus('info', 'Waiting for peer to join...');
 
-                // Start polling for answer
-                pollForAnswer();
             } catch (error) {
                 createStatus.textContent = 'Failed to create session';
                 showStatus('error', 'Failed to create session: ' + error.message);
             }
-        }
-
-        // Poll for answer from joiner
-        async function pollForAnswer() {
-            let attempts = 0;
-
-            const poll = async () => {
-                if (attempts >= MAX_POLLING_ATTEMPTS) {
-                    showStatus('error', 'Session expired. Please create a new session.');
-                    return;
-                }
-
-                try {
-                    const response = await fetch(`/api/file-share-session?code=${sessionCode}_answer`);
-                    
-                    if (response.ok) {
-                        const data = await response.json();
-                        if (data.offer) {
-                            await peerConnection.setRemoteDescription(new RTCSessionDescription(data.offer));
-                            // Don't show "Connected!" here - wait for dataChannel.onopen event
-                            return;
-                        }
-                    }
-                } catch (error) {
-                    console.error('Polling error:', error);
-                }
-
-                attempts++;
-                setTimeout(poll, POLLING_INTERVAL);
-            };
-
-            poll();
         }
 
         // Join session
@@ -551,18 +609,12 @@
             isCreator = false;
 
             try {
-                // Get offer from KV
-                const response = await fetch(`/api/file-share-session?code=${code}`);
-                
-                if (!response.ok) {
-                    throw new Error('Session not found or expired');
-                }
-
-                const data = await response.json();
-                const offer = data.offer;
-
                 joinSection.classList.add('hidden');
                 transferSection.classList.remove('hidden');
+                showStatus('info', 'Connecting to session...');
+
+                // Setup WebSocket connection
+                await setupSignalingWebSocket(sessionCode, 'joiner');
 
                 // Create peer connection
                 peerConnection = new RTCPeerConnection(rtcConfig);
@@ -573,43 +625,15 @@
                     setupDataChannel();
                 };
 
-                // Set remote description
-                await peerConnection.setRemoteDescription(new RTCSessionDescription(offer));
+                showStatus('info', 'Waiting for session details...');
+                
+                // The offer will be received via WebSocket onmessage handler
+                // which will trigger the answer creation automatically
 
-                // Create answer
-                const answer = await peerConnection.createAnswer();
-                await peerConnection.setLocalDescription(answer);
-
-                // Wait briefly for at least some ICE candidates to be gathered
-                // This ensures the SDP includes candidate information for better connectivity
-                await new Promise((resolve) => {
-                    const timeout = setTimeout(resolve, 1000); // Wait up to 1 second
-                    peerConnection.onicecandidate = (event) => {
-                        if (!event.candidate) {
-                            // ICE gathering complete
-                            clearTimeout(timeout);
-                            resolve();
-                        }
-                    };
-                });
-
-                // Store answer in KV
-                const answerResponse = await fetch('/api/file-share-session', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({
-                        code: `${code}_answer`,
-                        offer: peerConnection.localDescription
-                    })
-                });
-
-                if (!answerResponse.ok) {
-                    throw new Error('Failed to store answer');
-                }
-
-                showStatus('info', 'Waiting for connection...');
             } catch (error) {
                 showStatus('error', 'Failed to join session: ' + error.message);
+                joinSection.classList.remove('hidden');
+                transferSection.classList.add('hidden');
             }
         }
 

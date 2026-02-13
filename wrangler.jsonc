@@ -10,5 +10,13 @@
       "binding": "WEBRTC_SESSIONS",
       "id": "18a5d8b090144ae595321176dca58178"
     }
-  ]
+  ],
+  "durable_objects": {
+    "bindings": [
+      {
+        "name": "SESSION_MANAGER",
+        "class_name": "SessionManager"
+      }
+    ]
+  }
 }

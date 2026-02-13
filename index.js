@@ -1,6 +1,10 @@
 // Main worker entry point for all API endpoints
+import { SessionManager } from './session-manager.js';
 
-// Handle file share session API endpoints
+// Export the Durable Object
+export { SessionManager };
+
+// Handle file share session API endpoints (legacy KV-based, kept for backwards compatibility)
 async function handleFileShareSession(request, env) {
   const url = new URL(request.url);
   
@@ -96,12 +100,36 @@ async function handleFileShareSession(request, env) {
   });
 }
 
+// Handle WebSocket connections for real-time notifications
+async function handleWebSocketSession(request, env) {
+  const url = new URL(request.url);
+  const code = url.searchParams.get('code');
+  
+  if (!code) {
+    return new Response('Missing code parameter', { status: 400 });
+  }
+
+  // Get the Durable Object stub
+  // Use the session code as the ID to ensure all connections for the same session
+  // go to the same Durable Object instance
+  const id = env.SESSION_MANAGER.idFromName(code);
+  const stub = env.SESSION_MANAGER.get(id);
+  
+  // Forward the request to the Durable Object
+  return stub.fetch(request);
+}
+
 // Main fetch handler
 export default {
   async fetch(request, env, ctx) {
     const url = new URL(request.url);
     
-    // Route API requests
+    // Route WebSocket connections for real-time notifications
+    if (url.pathname === '/api/ws/file-share-session') {
+      return handleWebSocketSession(request, env);
+    }
+    
+    // Route API requests (legacy KV-based, kept for backwards compatibility)
     if (url.pathname.startsWith('/api/file-share-session')) {
       return handleFileShareSession(request, env);
     }
