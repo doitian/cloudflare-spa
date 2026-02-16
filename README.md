@@ -22,21 +22,21 @@ The file sharing app includes:
 - **Chat Support**: Send text messages alongside file transfers
 - **Progress Tracking**: Real-time progress bars for file transfers
 
-See [PUSH_NOTIFICATIONS.md](PUSH_NOTIFICATIONS.md) for detailed architecture documentation.
+See [docs/PUSH_NOTIFICATIONS.md](docs/PUSH_NOTIFICATIONS.md) for detailed architecture documentation.
 
 ## Structure
 
 ```
+├── docs/                  # Documentation
 ├── public/                # Static HTML files
 ├── index.js              # Worker with API endpoints
 ├── session-manager.js    # Durable Object for session management
-├── wrangler.jsonc        # Worker configuration
-└── PUSH_NOTIFICATIONS.md # Push notification architecture docs
+└── wrangler.jsonc        # Worker configuration
 ```
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment instructions.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment instructions.
 
 ## Local Development
 
