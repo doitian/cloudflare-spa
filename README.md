@@ -8,20 +8,35 @@ A collection of self-contained SPAs (HTML + CSS + JavaScript in single files) se
 
 ## Available SPAs
 
-- **WebRTC File Share** (`file-share.html`) - Share files directly between browsers using WebRTC
+- **WebRTC File Share** (`file-share.html`) - Share files directly between browsers using WebRTC with real-time push notifications
 - **Search Results** (`search.html`) - Multi-search engine opener
+
+## Features
+
+### WebRTC File Share
+
+The file sharing app includes:
+- **Real-time Push Notifications**: WebSocket-based signaling using Cloudflare Durable Objects (no polling!)
+- **Peer-to-Peer Transfer**: Files transferred directly between browsers, nothing stored on servers
+- **Session Management**: Secure 6-digit session codes for pairing
+- **Chat Support**: Send text messages alongside file transfers
+- **Progress Tracking**: Real-time progress bars for file transfers
+
+See [docs/PUSH_NOTIFICATIONS.md](docs/PUSH_NOTIFICATIONS.md) for detailed architecture documentation.
 
 ## Structure
 
 ```
-├── public/          # Static HTML files
-├── index.js         # Worker with API endpoints
-└── wrangler.jsonc   # Worker configuration
+├── docs/                  # Documentation
+├── public/                # Static HTML files
+├── index.js              # Worker with API endpoints
+├── session-manager.js    # Durable Object for session management
+└── wrangler.jsonc        # Worker configuration
 ```
 
 ## Deployment
 
-See [DEPLOYMENT.md](DEPLOYMENT.md) for deployment instructions.
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment instructions.
 
 ## Local Development
 
