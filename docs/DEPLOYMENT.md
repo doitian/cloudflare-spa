@@ -1,12 +1,11 @@
 # Deployment Guide
 
-This project is deployed as a **Cloudflare Worker** with static assets.
+This project is deployed as a **Cloudflare Worker** with static assets and Durable Objects.
 
 ## Prerequisites
 
 - Cloudflare account
 - Wrangler CLI: `npm install -g wrangler`
-- KV namespace for WebRTC sessions
 
 ## Deploy
 
@@ -18,25 +17,7 @@ npx wrangler login
 npx wrangler deploy
 ```
 
-## KV Namespace Setup
-
-The WebRTC File Share feature requires a KV namespace binding.
-
-### Create KV Namespace
-
-```bash
-# Create a new KV namespace
-npx wrangler kv:namespace create WEBRTC_SESSIONS
-
-# Copy the namespace ID and update wrangler.jsonc
-```
-
-### Or Use Dashboard
-
-1. Go to **Workers & Pages** → **KV**
-2. Create a new KV namespace
-3. Copy the namespace ID
-4. Update the `id` in `wrangler.jsonc` with your namespace ID
+**Note:** The first deployment will create the SessionManager Durable Object class. Subsequent deployments can use gradual rollouts if needed.
 
 ## Local Development
 
@@ -44,21 +25,33 @@ npx wrangler kv:namespace create WEBRTC_SESSIONS
 npx wrangler dev
 ```
 
-Wrangler creates a local KV namespace automatically for development.
+Wrangler creates a local Durable Object environment automatically for development.
+
+## Durable Objects
+
+The WebRTC File Share feature uses **Durable Objects** for real-time WebSocket-based session management. The `SessionManager` Durable Object is automatically created during deployment.
+
+No additional setup is required - Durable Objects are configured in `wrangler.jsonc`.
 
 ## Troubleshooting
 
 **API returns 404:**
 - Verify `index.js` exists and `wrangler.jsonc` has `"main": "index.js"`
-- Ensure KV binding is configured correctly
 - Check deployment logs
 
-**KV errors:**
-- Confirm binding name is exactly `WEBRTC_SESSIONS`
-- Verify KV namespace ID in `wrangler.jsonc` matches your namespace
+**WebSocket connection errors:**
+- Ensure the SessionManager Durable Object is properly deployed
+- Check browser console for detailed error messages
+- Verify the session code is correct
+
+**Migration errors (error 10211):**
+- This occurs when trying to use gradual deployments with Durable Object migrations
+- Always use `npx wrangler deploy` (not version uploads) for the first deployment
+- Once deployed, migrations should be removed from `wrangler.jsonc`
 
 ## Resources
 
 - [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
 - [Workers Static Assets](https://developers.cloudflare.com/workers/static-assets/)
-- [KV Documentation](https://developers.cloudflare.com/kv/)
+- [Durable Objects Documentation](https://developers.cloudflare.com/durable-objects/)
+- [Durable Objects Migrations](https://developers.cloudflare.com/durable-objects/reference/durable-objects-migrations/)
