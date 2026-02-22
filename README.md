@@ -6,6 +6,8 @@ Single Page Applications deployed to Cloudflare Workers
 
 A collection of self-contained SPAs (HTML + CSS + JavaScript in single files) served via Cloudflare Workers with static assets.
 
+Inspired by [Simon Willison's post on HTML tools](https://simonwillison.net/2025/Dec/10/html-tools/).
+
 ## Available SPAs
 
 - **WebRTC File Share** (`file-share.html`) - Share files directly between browsers using WebRTC with real-time push notifications
