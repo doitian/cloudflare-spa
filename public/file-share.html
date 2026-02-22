@@ -255,6 +255,12 @@
             border-radius: 6px;
             max-width: 80%;
             word-wrap: break-word;
+            cursor: pointer;
+            transition: opacity 0.15s ease;
+        }
+
+        .message.copied {
+            opacity: 0.6;
         }
 
         .message-sent {
@@ -285,18 +291,29 @@
 
         .message-text {
             font-size: 1em;
+            white-space: pre-wrap;
         }
 
         .text-input-group {
             display: flex;
             gap: 10px;
-            align-items: center;
+            align-items: flex-end;
         }
 
         #textInput {
             flex: 1;
-            text-transform: none;
-            letter-spacing: normal;
+            padding: 12px;
+            font-size: 1.1em;
+            font-family: inherit;
+            border: 2px solid #e0e0e0;
+            border-radius: 6px;
+            resize: vertical;
+            min-height: 44px;
+        }
+
+        #textInput:focus {
+            outline: none;
+            border-color: #4facfe;
         }
     </style>
 </head>
@@ -348,7 +365,7 @@
                     <h3 style="margin: 20px 0 10px 0;">Chat</h3>
                     <div class="messages" id="messages"></div>
                     <div class="text-input-group">
-                        <input type="text" id="textInput" placeholder="Type a message..." />
+                        <textarea id="textInput" placeholder="Type a message..." rows="2"></textarea>
                         <button class="btn-primary" id="sendTextBtn">Send</button>
                     </div>
                 </div>
@@ -757,6 +774,21 @@
         function displayMessage(text, isSent) {
             const messageDiv = document.createElement('div');
             messageDiv.className = `message ${isSent ? 'message-sent' : 'message-received'}`;
+            messageDiv.tabIndex = 0;
+            messageDiv.title = 'Click to copy';
+            const copyMessage = () => {
+                navigator.clipboard.writeText(text).then(() => {
+                    messageDiv.classList.add('copied');
+                    setTimeout(() => messageDiv.classList.remove('copied'), 300);
+                }).catch(() => {});
+            };
+            messageDiv.addEventListener('click', copyMessage);
+            messageDiv.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    copyMessage();
+                }
+            });
             
             const label = document.createElement('div');
             label.className = 'message-label';
@@ -812,12 +844,19 @@
         document.getElementById('joinBtn').addEventListener('click', () => {
             choiceSection.classList.add('hidden');
             joinSection.classList.remove('hidden');
+            codeInput.focus();
         });
         document.getElementById('connectBtn').addEventListener('click', joinSession);
         document.getElementById('cancelJoinBtn').addEventListener('click', () => {
             joinSection.classList.add('hidden');
             choiceSection.classList.remove('hidden');
             codeInput.value = '';
+        });
+
+        codeInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                joinSession();
+            }
         });
         
         fileInput.addEventListener('change', (event) => {
@@ -833,8 +872,9 @@
 
         sendTextBtn.addEventListener('click', sendTextMessage);
 
-        textInput.addEventListener('keypress', (event) => {
-            if (event.key === 'Enter') {
+        textInput.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && !event.shiftKey) {
+                event.preventDefault();
                 sendTextMessage();
             }
         });
