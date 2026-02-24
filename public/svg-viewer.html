@@ -1,0 +1,516 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG Viewer - Cloudflare SPA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 30px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-section.drag-over {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            font-size: 1.2em;
+            color: #667eea;
+            cursor: pointer;
+        }
+
+        .upload-hint {
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .viewer-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .viewer-section.active {
+            display: block;
+        }
+
+        .svg-container {
+            width: 100%;
+            min-height: 400px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            padding: 20px;
+            background: #fafafa;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: auto;
+        }
+
+        .svg-container svg {
+            max-width: 100%;
+            height: auto;
+        }
+
+        .controls-section {
+            display: none;
+            margin-top: 30px;
+            padding: 20px;
+            background: #f8f9ff;
+            border-radius: 8px;
+        }
+
+        .controls-section.active {
+            display: block;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .scale-options {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+
+        .scale-btn {
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+
+        .scale-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .scale-btn.active {
+            background: #667eea;
+            color: white;
+        }
+
+        .custom-scale {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-top: 10px;
+        }
+
+        .custom-scale input {
+            width: 100px;
+            padding: 8px;
+            border: 2px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.95em;
+        }
+
+        .download-buttons {
+            display: flex;
+            gap: 15px;
+            margin-top: 20px;
+            flex-wrap: wrap;
+        }
+
+        .download-btn {
+            padding: 12px 30px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1em;
+            font-weight: 500;
+            transition: transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .download-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .info-section {
+            margin-top: 20px;
+            padding: 15px;
+            background: #fff9e6;
+            border-left: 4px solid #ffcc00;
+            border-radius: 4px;
+        }
+
+        .info-section h3 {
+            margin-bottom: 10px;
+            color: #333;
+        }
+
+        .info-item {
+            margin-bottom: 5px;
+            color: #666;
+        }
+
+        .error-message {
+            display: none;
+            padding: 15px;
+            background: #ffe6e6;
+            border-left: 4px solid #ff4444;
+            border-radius: 4px;
+            color: #cc0000;
+            margin-bottom: 20px;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+        <h1>SVG Viewer</h1>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="upload-section" id="uploadSection">
+            <input type="file" id="fileInput" accept=".svg,image/svg+xml">
+            <label for="fileInput" class="upload-label">
+                📁 Click to upload an SVG file
+            </label>
+            <p class="upload-hint">or drag and drop an SVG file here</p>
+        </div>
+
+        <div class="viewer-section" id="viewerSection">
+            <div class="svg-container" id="svgContainer"></div>
+
+            <div class="info-section" id="infoSection">
+                <h3>SVG Information</h3>
+                <div class="info-item" id="fileName"></div>
+                <div class="info-item" id="fileSize"></div>
+                <div class="info-item" id="dimensions"></div>
+            </div>
+        </div>
+
+        <div class="controls-section" id="controlsSection">
+            <div class="control-group">
+                <label>Select Scale:</label>
+                <div class="scale-options">
+                    <button class="scale-btn active" data-scale="1">1x</button>
+                    <button class="scale-btn" data-scale="2">2x</button>
+                    <button class="scale-btn" data-scale="3">3x</button>
+                    <button class="scale-btn" data-scale="4">4x</button>
+                    <button class="scale-btn" data-scale="5">5x</button>
+                </div>
+                <div class="custom-scale">
+                    <label>Custom:</label>
+                    <input type="number" id="customScale" min="0.1" max="10" step="0.1" value="1">
+                    <button class="scale-btn" id="applyCustomScale">Apply</button>
+                </div>
+            </div>
+
+            <div class="control-group">
+                <label>Download as:</label>
+                <div class="download-buttons">
+                    <button class="download-btn" id="downloadPNG">Download as PNG</button>
+                    <button class="download-btn" id="downloadJPG">Download as JPG</button>
+                    <button class="download-btn" id="downloadSVG">Download SVG</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let svgContent = null;
+        let svgElement = null;
+        let currentScale = 1;
+        let originalWidth = 0;
+        let originalHeight = 0;
+        let fileName = '';
+
+        const fileInput = document.getElementById('fileInput');
+        const uploadSection = document.getElementById('uploadSection');
+        const viewerSection = document.getElementById('viewerSection');
+        const controlsSection = document.getElementById('controlsSection');
+        const svgContainer = document.getElementById('svgContainer');
+        const errorMessage = document.getElementById('errorMessage');
+
+        // File input change handler
+        fileInput.addEventListener('change', handleFileSelect);
+
+        // Drag and drop handlers
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('drag-over');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('drag-over');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('drag-over');
+
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        uploadSection.addEventListener('click', () => {
+            fileInput.click();
+        });
+
+        function handleFileSelect(e) {
+            const file = e.target.files[0];
+            if (file) {
+                handleFile(file);
+            }
+        }
+
+        function handleFile(file) {
+            // Validate file type
+            if (!file.type.includes('svg') && !file.name.endsWith('.svg')) {
+                showError('Please select a valid SVG file');
+                return;
+            }
+
+            fileName = file.name;
+            const reader = new FileReader();
+
+            reader.onload = (e) => {
+                svgContent = e.target.result;
+                displaySVG(svgContent, file);
+            };
+
+            reader.onerror = () => {
+                showError('Error reading file');
+            };
+
+            reader.readAsText(file);
+        }
+
+        function displaySVG(content, file) {
+            try {
+                // Clear previous content
+                svgContainer.innerHTML = content;
+                svgElement = svgContainer.querySelector('svg');
+
+                if (!svgElement) {
+                    showError('Invalid SVG file: No SVG element found');
+                    return;
+                }
+
+                // Get original dimensions
+                const viewBox = svgElement.getAttribute('viewBox');
+                if (viewBox) {
+                    const [, , width, height] = viewBox.split(' ').map(Number);
+                    originalWidth = width;
+                    originalHeight = height;
+                } else {
+                    originalWidth = parseFloat(svgElement.getAttribute('width')) || 300;
+                    originalHeight = parseFloat(svgElement.getAttribute('height')) || 150;
+                }
+
+                // Set viewBox if not present
+                if (!viewBox) {
+                    svgElement.setAttribute('viewBox', `0 0 ${originalWidth} ${originalHeight}`);
+                }
+
+                // Remove fixed width/height to make it responsive
+                svgElement.removeAttribute('width');
+                svgElement.removeAttribute('height');
+
+                // Show viewer and controls
+                viewerSection.classList.add('active');
+                controlsSection.classList.add('active');
+                errorMessage.classList.remove('active');
+
+                // Update info section
+                document.getElementById('fileName').textContent = `File: ${fileName}`;
+                document.getElementById('fileSize').textContent = `Size: ${formatFileSize(file.size)}`;
+                document.getElementById('dimensions').textContent = `Dimensions: ${originalWidth} × ${originalHeight}`;
+
+            } catch (error) {
+                showError('Error displaying SVG: ' + error.message);
+            }
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.add('active');
+            viewerSection.classList.remove('active');
+            controlsSection.classList.remove('active');
+        }
+
+        function formatFileSize(bytes) {
+            if (bytes < 1024) return bytes + ' bytes';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(2) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
+        }
+
+        // Scale button handlers
+        document.querySelectorAll('.scale-btn[data-scale]').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                document.querySelectorAll('.scale-btn[data-scale]').forEach(b => b.classList.remove('active'));
+                e.target.classList.add('active');
+                currentScale = parseFloat(e.target.dataset.scale);
+                document.getElementById('customScale').value = currentScale;
+            });
+        });
+
+        document.getElementById('applyCustomScale').addEventListener('click', () => {
+            const customValue = parseFloat(document.getElementById('customScale').value);
+            if (customValue > 0 && customValue <= 10) {
+                currentScale = customValue;
+                document.querySelectorAll('.scale-btn[data-scale]').forEach(b => b.classList.remove('active'));
+            } else {
+                alert('Please enter a scale between 0.1 and 10');
+            }
+        });
+
+        // Download handlers
+        document.getElementById('downloadPNG').addEventListener('click', () => downloadAsImage('png'));
+        document.getElementById('downloadJPG').addEventListener('click', () => downloadAsImage('jpg'));
+        document.getElementById('downloadSVG').addEventListener('click', downloadSVG);
+
+        function downloadAsImage(format) {
+            if (!svgElement) return;
+
+            const scaledWidth = originalWidth * currentScale;
+            const scaledHeight = originalHeight * currentScale;
+
+            // Create a canvas
+            const canvas = document.createElement('canvas');
+            canvas.width = scaledWidth;
+            canvas.height = scaledHeight;
+            const ctx = canvas.getContext('2d');
+
+            // Create a blob from the SVG
+            const svgData = new XMLSerializer().serializeToString(svgElement);
+            const svgBlob = new Blob([svgData], { type: 'image/svg+xml;charset=utf-8' });
+            const url = URL.createObjectURL(svgBlob);
+
+            // Create an image from the blob
+            const img = new Image();
+            img.onload = () => {
+                // Fill white background for JPG
+                if (format === 'jpg') {
+                    ctx.fillStyle = 'white';
+                    ctx.fillRect(0, 0, scaledWidth, scaledHeight);
+                }
+
+                // Draw the image on canvas
+                ctx.drawImage(img, 0, 0, scaledWidth, scaledHeight);
+
+                // Convert canvas to blob and download
+                canvas.toBlob((blob) => {
+                    const downloadUrl = URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    const baseName = fileName.replace(/\.svg$/i, '');
+                    link.download = `${baseName}_${currentScale}x.${format}`;
+                    link.href = downloadUrl;
+                    link.click();
+
+                    URL.revokeObjectURL(downloadUrl);
+                    URL.revokeObjectURL(url);
+                }, format === 'jpg' ? 'image/jpeg' : 'image/png', 0.95);
+            };
+
+            img.onerror = () => {
+                alert('Error converting SVG to image. Some SVG features may not be supported.');
+                URL.revokeObjectURL(url);
+            };
+
+            img.src = url;
+        }
+
+        function downloadSVG() {
+            if (!svgContent) return;
+
+            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const url = URL.createObjectURL(blob);
+            const link = document.createElement('a');
+            link.download = fileName;
+            link.href = url;
+            link.click();
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>

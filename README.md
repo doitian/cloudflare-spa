@@ -12,6 +12,7 @@ Inspired by [Simon Willison's post on HTML tools](https://simonwillison.net/2025
 
 - **WebRTC File Share** (`file-share.html`) - Share files directly between browsers using WebRTC with real-time push notifications
 - **Search Results** (`search.html`) - Multi-search engine opener
+- **SVG Viewer** (`svg-viewer.html`) - Upload, view, and download SVG files as PNG or JPG with customizable scales
 
 ## Features
 
