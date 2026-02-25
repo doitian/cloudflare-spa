@@ -279,11 +279,15 @@
                 }
             });
 
-            // Auto-focus search box on any keypress
+            // Auto-focus search box on any keypress; Esc clears search globally
             document.addEventListener('keydown', (e) => {
                 if (e.target === searchInput) return;
                 if (e.ctrlKey || e.metaKey || e.altKey) return;
-                if (e.key.length === 1) {
+                if (e.key === 'Escape') {
+                    e.preventDefault();
+                    searchInput.value = '';
+                    filterApps('');
+                } else if (e.key.length === 1) {
                     searchInput.focus();
                 }
             });
