@@ -163,7 +163,7 @@
         <div class="search-box">
             <span class="search-icon">🔍</span>
             <input type="text" id="searchInput" placeholder="Search apps..." autocomplete="off">
-            <span class="search-hint">↑↓ navigate · ↵ open</span>
+            <span class="search-hint">↑↓ navigate · ↵ open · esc clear</span>
         </div>
 
         <ul class="spa-list" id="spaList">
@@ -266,6 +266,10 @@
                     e.preventDefault();
                     if (selectedIndex > 0) selectedIndex--;
                     updateSelection(visibleItems);
+                } else if (e.key === 'Escape') {
+                    e.preventDefault();
+                    searchInput.value = '';
+                    filterApps('');
                 } else if (e.key === 'Enter') {
                     e.preventDefault();
                     if (visibleItems.length > 0 && visibleItems[selectedIndex]) {
