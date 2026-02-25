@@ -2,35 +2,39 @@ name: PR Preview
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, closed]
+    types: [opened, synchronize, reopened]
 
 jobs:
-  deploy-preview:
-    if: github.event.action != 'closed'
+  preview:
     runs-on: ubuntu-latest
     permissions:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
 
-      - name: Deploy Preview
+      - name: Upload Preview Version
         uses: cloudflare/wrangler-action@v3
         id: deploy
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: deploy --name cloudflare-spa-pr-${{ github.event.pull_request.number }}
+          command: versions upload
 
       - name: Comment Preview URL
         uses: actions/github-script@v7
         with:
           script: |
-            const deploymentUrl = '${{ steps.deploy.outputs.deployment-url }}';
+            const previewUrl = '${{ steps.deploy.outputs.deployment-url }}';
+            if (!previewUrl) {
+              console.log('No preview URL found in deployment output');
+              return;
+            }
             const body = [
               '🚀 **Preview Deployment**',
               '',
-              `Preview URL: ${deploymentUrl}`,
+              `Preview URL: ${previewUrl}`,
               '',
+              '_This is a preview version and is not deployed to production._',
               `_Updated: ${new Date().toISOString()}_`,
             ].join('\n');
             const { data: comments } = await github.rest.issues.listComments({
@@ -54,16 +58,3 @@ jobs:
                 body,
               });
             }
-
-  cleanup-preview:
-    if: github.event.action == 'closed'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Delete Preview Worker
-        uses: cloudflare/wrangler-action@v3
-        with:
-          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: delete --name cloudflare-spa-pr-${{ github.event.pull_request.number }} --force

@@ -41,7 +41,7 @@ See [docs/PUSH_NOTIFICATIONS.md](docs/PUSH_NOTIFICATIONS.md) for detailed archit
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment instructions.
 
-Pull requests are automatically deployed to preview Workers via GitHub Actions. See the [PR Preview](docs/DEPLOYMENT.md#pr-preview) section for setup.
+Pull requests are automatically previewed using Cloudflare's native [Gradual Deployments](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/) via GitHub Actions. See the [PR Preview](docs/DEPLOYMENT.md#pr-preview) section for setup.
 
 ## Local Development
 

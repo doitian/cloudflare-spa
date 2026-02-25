@@ -30,22 +30,25 @@ After the initial deployment succeeds:
 
 ## PR Preview
 
-Pull requests are automatically deployed to a preview Worker via GitHub Actions.
+Pull requests are automatically previewed using Cloudflare's [Gradual Deployments](https://developers.cloudflare.com/workers/configuration/versions-and-deployments/) via GitHub Actions.
 
 ### How It Works
 
-- Each PR gets its own isolated Worker: `cloudflare-spa-pr-{number}`
-- A comment with the preview URL is added to the PR
-- The preview Worker is automatically deleted when the PR is closed
+- Each PR push uploads a new Worker version using `wrangler versions upload`
+- A preview URL (on the `workers.dev` subdomain) is commented on the PR
+- The preview version shares the same Durable Objects as production — no separate migration or setup is needed
+- Preview versions are **not** deployed to production; they must be promoted via `wrangler versions deploy` or the Cloudflare dashboard
 
 ### Setup
 
-Add these secrets to your GitHub repository (Settings → Secrets and variables → Actions):
+1. Add these secrets to your GitHub repository (Settings → Secrets and variables → Actions):
 
-- **`CLOUDFLARE_API_TOKEN`**: API token with "Edit Cloudflare Workers" permissions
-- **`CLOUDFLARE_ACCOUNT_ID`**: Your Cloudflare account ID
+   - **`CLOUDFLARE_API_TOKEN`**: API token with "Edit Cloudflare Workers" permissions
+   - **`CLOUDFLARE_ACCOUNT_ID`**: Your Cloudflare account ID
 
-To create the API token, go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) and use the "Edit Cloudflare Workers" template.
+   To create the API token, go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) and use the "Edit Cloudflare Workers" template.
+
+2. **Enable the `workers.dev` subdomain** for the Worker in the Cloudflare dashboard (Workers & Pages → cloudflare-spa → Settings → Domains & Routes). The preview URL uses this subdomain and won't work if it's disabled.
 
 ## Local Development
 
