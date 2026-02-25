@@ -28,6 +28,25 @@ After the initial deployment succeeds:
 1. **For regular deployments**: Use `npx wrangler deploy` as normal
 2. **For gradual deployments**: You may need to remove the `migrations` section from `wrangler.jsonc` to avoid error 10211
 
+## PR Preview
+
+Pull requests are automatically deployed to a preview Worker via GitHub Actions.
+
+### How It Works
+
+- Each PR gets its own isolated Worker: `cloudflare-spa-pr-{number}`
+- A comment with the preview URL is added to the PR
+- The preview Worker is automatically deleted when the PR is closed
+
+### Setup
+
+Add these secrets to your GitHub repository (Settings → Secrets and variables → Actions):
+
+- **`CLOUDFLARE_API_TOKEN`**: API token with "Edit Cloudflare Workers" permissions
+- **`CLOUDFLARE_ACCOUNT_ID`**: Your Cloudflare account ID
+
+To create the API token, go to [Cloudflare API Tokens](https://dash.cloudflare.com/profile/api-tokens) and use the "Edit Cloudflare Workers" template.
+
 ## Local Development
 
 ```bash

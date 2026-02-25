@@ -41,6 +41,8 @@ See [docs/PUSH_NOTIFICATIONS.md](docs/PUSH_NOTIFICATIONS.md) for detailed archit
 
 See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for deployment instructions.
 
+Pull requests are automatically deployed to preview Workers via GitHub Actions. See the [PR Preview](docs/DEPLOYMENT.md#pr-preview) section for setup.
+
 ## Local Development
 
 Test SPAs locally by opening HTML files in your browser.
