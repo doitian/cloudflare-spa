@@ -1,0 +1,679 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Clipboard Inspector - Cloudflare SPA</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            color: #666;
+            margin-bottom: 24px;
+            font-size: 1em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+            margin-bottom: 28px;
+        }
+
+        button {
+            padding: 10px 22px;
+            border: none;
+            border-radius: 6px;
+            font-size: 0.95em;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            opacity: 0.9;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn-secondary {
+            background: #f0f2ff;
+            color: #667eea;
+            border: 1px solid #667eea;
+        }
+
+        .btn-secondary:hover {
+            background: #e4e8ff;
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status-bar {
+            padding: 10px 16px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            display: none;
+        }
+
+        .status-bar.info {
+            background: #e8f4fd;
+            color: #1a73e8;
+            border: 1px solid #b3d9f7;
+            display: block;
+        }
+
+        .status-bar.success {
+            background: #e6f4ea;
+            color: #188038;
+            border: 1px solid #a8d5b5;
+            display: block;
+        }
+
+        .status-bar.error {
+            background: #fce8e6;
+            color: #c5221f;
+            border: 1px solid #f5b8b5;
+            display: block;
+        }
+
+        .section {
+            margin-bottom: 28px;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 10px;
+        }
+
+        .section-title {
+            font-size: 1em;
+            font-weight: 700;
+            color: #444;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .type-badge {
+            font-size: 0.75em;
+            padding: 2px 8px;
+            border-radius: 12px;
+            background: #f0f2ff;
+            color: #667eea;
+            font-weight: 600;
+            font-family: 'Courier New', monospace;
+        }
+
+        .content-box {
+            background: #f8f9fa;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            padding: 14px 16px;
+            font-size: 0.9em;
+            white-space: pre-wrap;
+            word-break: break-word;
+            max-height: 300px;
+            overflow-y: auto;
+            font-family: 'Courier New', monospace;
+            color: #333;
+        }
+
+        .content-box.html-preview {
+            font-family: inherit;
+            font-size: 0.95em;
+        }
+
+        .content-box.html-preview * {
+            max-width: 100%;
+        }
+
+        .tab-bar {
+            display: flex;
+            gap: 0;
+            border-bottom: 2px solid #e0e0e0;
+            margin-bottom: 16px;
+        }
+
+        .tab {
+            padding: 8px 18px;
+            cursor: pointer;
+            font-size: 0.9em;
+            font-weight: 500;
+            color: #666;
+            border-bottom: 2px solid transparent;
+            margin-bottom: -2px;
+            transition: all 0.15s ease;
+            background: none;
+            border-top: none;
+            border-left: none;
+            border-right: none;
+        }
+
+        .tab:hover {
+            color: #667eea;
+        }
+
+        .tab.active {
+            color: #667eea;
+            border-bottom-color: #667eea;
+            font-weight: 600;
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .copy-row {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .copy-row .btn-secondary {
+            flex-shrink: 0;
+            padding: 6px 16px;
+            font-size: 0.85em;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #999;
+        }
+
+        .empty-state .icon {
+            font-size: 3em;
+            margin-bottom: 10px;
+        }
+
+        .formats-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 16px;
+        }
+
+        .format-chip {
+            padding: 3px 10px;
+            border-radius: 12px;
+            font-size: 0.8em;
+            font-weight: 500;
+            font-family: 'Courier New', monospace;
+            background: #f0f2ff;
+            color: #667eea;
+            border: 1px solid #c5cff9;
+        }
+
+        .divider {
+            border: none;
+            border-top: 1px solid #eee;
+            margin: 24px 0;
+        }
+
+        .char-count {
+            font-size: 0.78em;
+            color: #999;
+            text-align: right;
+            margin-top: 4px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+        <h1>📋 Clipboard Inspector</h1>
+        <p class="subtitle">Inspect your clipboard contents and copy as Markdown or plain text.</p>
+
+        <div class="actions">
+            <button class="btn-primary" id="readBtn" onclick="readClipboard()">📋 Read Clipboard</button>
+            <button class="btn-secondary" id="copyMarkdownBtn" onclick="copyAs('markdown')" disabled>⬇ Copy as Markdown</button>
+            <button class="btn-secondary" id="copyPlainBtn" onclick="copyAs('plain')" disabled>⬇ Copy as Plain Text</button>
+        </div>
+
+        <div class="status-bar" id="statusBar"></div>
+
+        <div id="emptyState" class="empty-state">
+            <div class="icon">📋</div>
+            <p>Click <strong>Read Clipboard</strong> to inspect your clipboard contents.</p>
+        </div>
+
+        <div id="results" style="display:none">
+            <div class="section">
+                <div class="section-title" style="margin-bottom:10px">Available Formats</div>
+                <div class="formats-list" id="formatsList"></div>
+            </div>
+
+            <hr class="divider">
+
+            <div class="tab-bar" id="tabBar"></div>
+            <div id="tabContents"></div>
+        </div>
+    </div>
+
+    <script>
+        // ── State ──────────────────────────────────────────────────────────────
+        let clipboardData = {}; // { mimeType: string }
+
+        // ── HTML → Markdown converter ──────────────────────────────────────────
+        function htmlToMarkdown(html) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            return nodeToMarkdown(doc.body).trim();
+        }
+
+        function nodeToMarkdown(node, ctx) {
+            ctx = ctx || { listDepth: 0, ordered: false };
+            if (node.nodeType === Node.TEXT_NODE) {
+                return node.textContent.replace(/\n+/g, ' ');
+            }
+            if (node.nodeType !== Node.ELEMENT_NODE) return '';
+
+            const tag = node.tagName.toLowerCase();
+            const inner = () => Array.from(node.childNodes).map(n => nodeToMarkdown(n, ctx)).join('');
+
+            switch (tag) {
+                case 'h1': return `# ${inner().trim()}\n\n`;
+                case 'h2': return `## ${inner().trim()}\n\n`;
+                case 'h3': return `### ${inner().trim()}\n\n`;
+                case 'h4': return `#### ${inner().trim()}\n\n`;
+                case 'h5': return `##### ${inner().trim()}\n\n`;
+                case 'h6': return `###### ${inner().trim()}\n\n`;
+                case 'p':  return `${inner().trim()}\n\n`;
+                case 'br': return '\n';
+                case 'strong':
+                case 'b':  return `**${inner().trim()}**`;
+                case 'em':
+                case 'i':  return `*${inner().trim()}*`;
+                case 's':
+                case 'del':
+                case 'strike': return `~~${inner().trim()}~~`;
+                case 'code': {
+                    const text = inner();
+                    if (node.closest('pre')) return text;
+                    return `\`${text}\``;
+                }
+                case 'pre': {
+                    const codeEl = node.querySelector('code');
+                    const text = codeEl ? codeEl.textContent : node.textContent;
+                    const lang = (codeEl && (codeEl.className.match(/language-(\S+)/) || [])[1]) || '';
+                    return `\`\`\`${lang}\n${text}\n\`\`\`\n\n`;
+                }
+                case 'a': {
+                    const href = node.getAttribute('href') || '';
+                    const text = inner().trim();
+                    if (!href || href === text) return text;
+                    return `[${text}](${href})`;
+                }
+                case 'img': {
+                    const src = node.getAttribute('src') || '';
+                    const alt = node.getAttribute('alt') || '';
+                    return `![${alt}](${src})`;
+                }
+                case 'ul': {
+                    const childCtx = { listDepth: ctx.listDepth + 1, ordered: false };
+                    const indent = '  '.repeat(ctx.listDepth);
+                    return Array.from(node.children).map(li => {
+                        const liContent = nodeToMarkdown(li, childCtx).trim();
+                        return `${indent}- ${liContent}`;
+                    }).join('\n') + '\n\n';
+                }
+                case 'ol': {
+                    const childCtx = { listDepth: ctx.listDepth + 1, ordered: true };
+                    const indent = '  '.repeat(ctx.listDepth);
+                    return Array.from(node.children).map((li, i) => {
+                        const liContent = nodeToMarkdown(li, childCtx).trim();
+                        return `${indent}${i + 1}. ${liContent}`;
+                    }).join('\n') + '\n\n';
+                }
+                case 'li':
+                    return inner().trim();
+                case 'blockquote': {
+                    const content = inner().trim().split('\n').map(l => `> ${l}`).join('\n');
+                    return `${content}\n\n`;
+                }
+                case 'hr':
+                    return `---\n\n`;
+                case 'table':
+                    return tableToMarkdown(node);
+                case 'thead':
+                case 'tbody':
+                case 'tfoot':
+                    return inner();
+                case 'tr': {
+                    const cells = Array.from(node.children).map(td => nodeToMarkdown(td, ctx).trim());
+                    return `| ${cells.join(' | ')} |`;
+                }
+                case 'th':
+                case 'td':
+                    return inner().trim();
+                case 'div':
+                case 'section':
+                case 'article':
+                case 'main':
+                case 'header':
+                case 'footer':
+                case 'nav':
+                case 'aside': {
+                    const content = inner();
+                    // add newlines around block containers if needed
+                    if (/\S/.test(content)) return content.trimEnd() + '\n\n';
+                    return '';
+                }
+                case 'span':
+                case 'label':
+                case 'abbr':
+                case 'cite':
+                case 'mark':
+                    return inner();
+                case 'script':
+                case 'style':
+                case 'head':
+                case 'meta':
+                case 'link':
+                    return '';
+                default:
+                    return inner();
+            }
+        }
+
+        function tableToMarkdown(table) {
+            const rows = Array.from(table.querySelectorAll('tr'));
+            if (rows.length === 0) return '';
+
+            const allCells = rows.map(row =>
+                Array.from(row.children).map(cell => cell.textContent.trim().replace(/\|/g, '\\|'))
+            );
+
+            const colCount = Math.max(...allCells.map(r => r.length));
+            const pad = (arr) => {
+                while (arr.length < colCount) arr.push('');
+                return arr;
+            };
+
+            const firstRow = pad(allCells[0]);
+            const separator = firstRow.map(() => '---');
+            const lines = [
+                `| ${firstRow.join(' | ')} |`,
+                `| ${separator.join(' | ')} |`,
+                ...allCells.slice(1).map(r => `| ${pad(r).join(' | ')} |`)
+            ];
+            return lines.join('\n') + '\n\n';
+        }
+
+        // ── HTML → Plain text ──────────────────────────────────────────────────
+        function htmlToPlain(html) {
+            const doc = new DOMParser().parseFromString(html, 'text/html');
+            // Replace <br> and block-level elements with newlines before extracting
+            doc.querySelectorAll('br').forEach(el => el.replaceWith('\n'));
+            doc.querySelectorAll('p, div, h1, h2, h3, h4, h5, h6, li, tr, blockquote, pre, hr').forEach(el => {
+                el.before('\n');
+                el.after('\n');
+            });
+            return doc.body.textContent.replace(/\n{3,}/g, '\n\n').trim();
+        }
+
+        // ── Clipboard reading ──────────────────────────────────────────────────
+        async function readClipboard() {
+            showStatus('info', 'Reading clipboard…');
+            clipboardData = {};
+
+            try {
+                if (!navigator.clipboard || !navigator.clipboard.read) {
+                    // Fallback: try readText only
+                    const text = await navigator.clipboard.readText();
+                    clipboardData['text/plain'] = text;
+                } else {
+                    const items = await navigator.clipboard.read();
+                    for (const item of items) {
+                        for (const type of item.types) {
+                            try {
+                                const blob = await item.getType(type);
+                                clipboardData[type] = await blob.text();
+                            } catch (e) {
+                                // skip unreadable types
+                            }
+                        }
+                    }
+                }
+
+                if (Object.keys(clipboardData).length === 0) {
+                    showStatus('info', 'Clipboard is empty.');
+                    hideResults();
+                    return;
+                }
+
+                showStatus('success', `Clipboard read successfully. Found ${Object.keys(clipboardData).length} format(s).`);
+                renderResults();
+            } catch (err) {
+                if (err.name === 'NotAllowedError') {
+                    showStatus('error', 'Clipboard access denied. Please allow clipboard permissions in your browser and try again.');
+                } else {
+                    showStatus('error', `Error reading clipboard: ${err.message}`);
+                }
+                hideResults();
+            }
+        }
+
+        // ── Copy helpers ───────────────────────────────────────────────────────
+        async function copyAs(format) {
+            let text = '';
+            if (format === 'markdown') {
+                if (clipboardData['text/html']) {
+                    text = htmlToMarkdown(clipboardData['text/html']);
+                } else {
+                    text = clipboardData['text/plain'] || '';
+                }
+            } else {
+                if (clipboardData['text/plain']) {
+                    text = clipboardData['text/plain'];
+                } else if (clipboardData['text/html']) {
+                    text = htmlToPlain(clipboardData['text/html']);
+                } else {
+                    text = Object.values(clipboardData)[0] || '';
+                }
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                showStatus('success', `Copied as ${format === 'markdown' ? 'Markdown' : 'plain text'} to clipboard!`);
+            } catch (err) {
+                showStatus('error', `Failed to copy: ${err.message}`);
+            }
+        }
+
+        // ── UI helpers ─────────────────────────────────────────────────────────
+        function showStatus(type, message) {
+            const bar = document.getElementById('statusBar');
+            bar.className = `status-bar ${type}`;
+            bar.textContent = message;
+        }
+
+        function hideResults() {
+            document.getElementById('results').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'block';
+            document.getElementById('copyMarkdownBtn').disabled = true;
+            document.getElementById('copyPlainBtn').disabled = true;
+        }
+
+        function renderResults() {
+            const types = Object.keys(clipboardData);
+            document.getElementById('emptyState').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+            document.getElementById('copyMarkdownBtn').disabled = false;
+            document.getElementById('copyPlainBtn').disabled = false;
+
+            // Formats list
+            document.getElementById('formatsList').innerHTML = types.map(t =>
+                `<span class="format-chip">${escHtml(t)}</span>`
+            ).join('');
+
+            // Tabs
+            const tabBar = document.getElementById('tabBar');
+            const tabContents = document.getElementById('tabContents');
+            tabBar.innerHTML = '';
+            tabContents.innerHTML = '';
+
+            // Determine tab order: plain first, then html, then others
+            const ordered = [
+                ...types.filter(t => t === 'text/plain'),
+                ...types.filter(t => t === 'text/html'),
+                ...types.filter(t => t !== 'text/plain' && t !== 'text/html')
+            ];
+
+            ordered.forEach((type, idx) => {
+                const tabId = `tab-${idx}`;
+                const contentId = `content-${idx}`;
+                const isFirst = idx === 0;
+
+                // Tab button
+                const tab = document.createElement('button');
+                tab.className = `tab${isFirst ? ' active' : ''}`;
+                tab.textContent = tabLabel(type);
+                tab.onclick = () => switchTab(idx, ordered.length);
+                tabBar.appendChild(tab);
+
+                // Tab content
+                const content = document.createElement('div');
+                content.className = `tab-content${isFirst ? ' active' : ''}`;
+                content.id = contentId;
+                content.innerHTML = buildTabContent(type, clipboardData[type]);
+                tabContents.appendChild(content);
+            });
+
+            // If HTML is present, add a combined "Markdown Preview" tab
+            if (clipboardData['text/html']) {
+                const mdText = htmlToMarkdown(clipboardData['text/html']);
+                const tabIdx = ordered.length;
+                const tab = document.createElement('button');
+                tab.className = 'tab';
+                tab.textContent = 'Markdown';
+                tab.onclick = () => switchTab(tabIdx, tabIdx + 1);
+                tabBar.appendChild(tab);
+
+                const content = document.createElement('div');
+                content.className = 'tab-content';
+                content.innerHTML = buildRawContent('Generated Markdown', mdText, 'markdown');
+                tabContents.appendChild(content);
+            }
+        }
+
+        function switchTab(activeIdx, total) {
+            document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', i === activeIdx));
+            document.querySelectorAll('.tab-content').forEach((c, i) => c.classList.toggle('active', i === activeIdx));
+        }
+
+        function tabLabel(type) {
+            const map = {
+                'text/plain': 'Plain Text',
+                'text/html': 'HTML Source',
+                'text/rtf': 'RTF',
+                'image/png': 'PNG Image',
+                'image/jpeg': 'JPEG Image',
+            };
+            return map[type] || type;
+        }
+
+        function buildTabContent(type, value) {
+            if (type === 'text/html') {
+                return `
+                    <div class="section">
+                        <div class="section-header">
+                            <span class="section-title">HTML Preview</span>
+                            <span class="type-badge">text/html</span>
+                        </div>
+                        <div class="content-box html-preview">${value}</div>
+                        <div class="char-count">${value.length.toLocaleString()} characters</div>
+                    </div>
+                    <div class="section">
+                        <div class="section-header">
+                            <span class="section-title">Raw HTML</span>
+                        </div>
+                        <div class="content-box">${escHtml(value)}</div>
+                    </div>`;
+            }
+            if (type.startsWith('image/')) {
+                return `<div class="section">
+                    <div class="section-header">
+                        <span class="section-title">Image</span>
+                        <span class="type-badge">${escHtml(type)}</span>
+                    </div>
+                    <p style="color:#999;font-size:0.9em">Image data not shown (binary)</p>
+                </div>`;
+            }
+            return buildRawContent(tabLabel(type), value, type);
+        }
+
+        function buildRawContent(title, value, type) {
+            return `
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">${escHtml(title)}</span>
+                        <span class="type-badge">${escHtml(type)}</span>
+                    </div>
+                    <div class="content-box">${escHtml(value)}</div>
+                    <div class="char-count">${value.length.toLocaleString()} characters</div>
+                </div>`;
+        }
+
+        function escHtml(str) {
+            return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+        }
+    </script>
+</body>
+</html>
