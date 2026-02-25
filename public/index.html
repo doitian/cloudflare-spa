@@ -76,6 +76,59 @@
             font-size: 0.95em;
         }
 
+        .search-box {
+            position: relative;
+            margin-bottom: 10px;
+        }
+
+        .search-box input {
+            width: 100%;
+            padding: 14px 16px 14px 44px;
+            font-size: 1.1em;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            outline: none;
+            transition: border-color 0.2s ease, box-shadow 0.2s ease;
+            background: #fafafa;
+        }
+
+        .search-box input:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+            background: white;
+        }
+
+        .search-box .search-icon {
+            position: absolute;
+            left: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 1.2em;
+            color: #999;
+            pointer-events: none;
+        }
+
+        .search-box .search-hint {
+            position: absolute;
+            right: 14px;
+            top: 50%;
+            transform: translateY(-50%);
+            font-size: 0.8em;
+            color: #aaa;
+            pointer-events: none;
+        }
+
+        .spa-link.selected {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 12px rgba(0, 0, 0, 0.2);
+            outline: 3px solid #ffd700;
+            outline-offset: -3px;
+        }
+
+        .spa-item.hidden {
+            display: none;
+        }
+
         .empty-state {
             text-align: center;
             padding: 40px;
@@ -107,6 +160,12 @@
         <h1>🚀 Cloudflare SPA</h1>
         <p class="subtitle">Single Page Applications deployed to Cloudflare Workers</p>
         
+        <div class="search-box">
+            <span class="search-icon">🔍</span>
+            <input type="text" id="searchInput" placeholder="Search apps..." autocomplete="off">
+            <span class="search-hint">↑↓ navigate · ↵ open</span>
+        </div>
+
         <ul class="spa-list" id="spaList">
             <li class="empty-state">Loading applications...</li>
         </ul>
@@ -117,53 +176,114 @@
     </div>
 
     <script>
-        // Load and display the list of available SPAs
-        async function loadSPAList() {
-            const spaList = document.getElementById('spaList');
-            
-            // Manually maintained list of available SPAs
-            // Add your SPA pages here as you create them
-            const spas = [
-                {
-                    name: 'WebRTC File Share',
-                    description: 'Share files directly between browsers using WebRTC with session codes',
-                    url: 'file-share.html'
-                },
-                {
-                    name: 'Search Results',
-                    description: 'Automatically opens search results from Google, Kagi, and Perplexity',
-                    url: 'search.html'
-                },
-                {
-                    name: 'SVG Viewer',
-                    description: 'Upload, view, and download SVG files as PNG or JPG with customizable scales',
-                    url: 'svg-viewer.html'
-                },
-                {
-                    name: 'Clipboard Inspector',
-                    description: 'Inspect clipboard contents and copy as Markdown or plain text',
-                    url: 'clipboard-inspector.html'
-                }
-                // Add more SPAs here as you create them
-            ];
+        const spas = [
+            {
+                name: 'WebRTC File Share',
+                description: 'Share files directly between browsers using WebRTC with session codes',
+                url: 'file-share.html'
+            },
+            {
+                name: 'Search Results',
+                description: 'Automatically opens search results from Google, Kagi, and Perplexity',
+                url: 'search.html'
+            },
+            {
+                name: 'SVG Viewer',
+                description: 'Upload, view, and download SVG files as PNG or JPG with customizable scales',
+                url: 'svg-viewer.html'
+            },
+            {
+                name: 'Clipboard Inspector',
+                description: 'Inspect clipboard contents and copy as Markdown or plain text',
+                url: 'clipboard-inspector.html'
+            }
+            // Add more SPAs here as you create them
+        ];
 
+        let selectedIndex = 0;
+
+        function getVisibleItems() {
+            return Array.from(document.querySelectorAll('.spa-item:not(.hidden)'));
+        }
+
+        function updateSelection(visibleItems) {
+            document.querySelectorAll('.spa-link.selected').forEach(el => el.classList.remove('selected'));
+            if (visibleItems.length > 0) {
+                if (selectedIndex >= visibleItems.length) selectedIndex = visibleItems.length - 1;
+                if (selectedIndex < 0) selectedIndex = 0;
+                const link = visibleItems[selectedIndex].querySelector('.spa-link');
+                if (link) {
+                    link.classList.add('selected');
+                    link.scrollIntoView({ block: 'nearest' });
+                }
+            }
+        }
+
+        function filterApps(query) {
+            const q = query.toLowerCase().trim();
+            const items = document.querySelectorAll('.spa-item');
+            items.forEach(item => {
+                const name = item.dataset.name || '';
+                const desc = item.dataset.desc || '';
+                const match = !q || name.includes(q) || desc.includes(q);
+                item.classList.toggle('hidden', !match);
+            });
+            selectedIndex = 0;
+            updateSelection(getVisibleItems());
+        }
+
+        function renderList() {
+            const spaList = document.getElementById('spaList');
             if (spas.length === 0) {
                 spaList.innerHTML = '<li class="empty-state">No applications available yet. Create your first SPA!</li>';
                 return;
             }
-
             spaList.innerHTML = spas.map(spa => `
-                <li class="spa-item">
+                <li class="spa-item" data-name="${spa.name.toLowerCase()}" data-desc="${spa.description.toLowerCase()}">
                     <a href="${spa.url}" class="spa-link">
                         <h3>${spa.name}</h3>
                         <p>${spa.description}</p>
                     </a>
                 </li>
             `).join('');
+            selectedIndex = 0;
+            updateSelection(getVisibleItems());
         }
 
-        // Load the SPA list when the page loads
-        document.addEventListener('DOMContentLoaded', loadSPAList);
+        document.addEventListener('DOMContentLoaded', () => {
+            const searchInput = document.getElementById('searchInput');
+            renderList();
+
+            searchInput.addEventListener('input', () => filterApps(searchInput.value));
+
+            searchInput.addEventListener('keydown', (e) => {
+                const visibleItems = getVisibleItems();
+                if (e.key === 'ArrowDown') {
+                    e.preventDefault();
+                    if (selectedIndex < visibleItems.length - 1) selectedIndex++;
+                    updateSelection(visibleItems);
+                } else if (e.key === 'ArrowUp') {
+                    e.preventDefault();
+                    if (selectedIndex > 0) selectedIndex--;
+                    updateSelection(visibleItems);
+                } else if (e.key === 'Enter') {
+                    e.preventDefault();
+                    if (visibleItems.length > 0 && visibleItems[selectedIndex]) {
+                        const link = visibleItems[selectedIndex].querySelector('.spa-link');
+                        if (link) window.location.href = link.href;
+                    }
+                }
+            });
+
+            // Auto-focus search box on any keypress
+            document.addEventListener('keydown', (e) => {
+                if (e.target === searchInput) return;
+                if (e.ctrlKey || e.metaKey || e.altKey) return;
+                if (e.key.length === 1) {
+                    searchInput.focus();
+                }
+            });
+        });
     </script>
 </body>
 </html>
