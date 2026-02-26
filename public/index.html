@@ -256,32 +256,8 @@
 
             searchInput.addEventListener('input', () => filterApps(searchInput.value));
 
-            searchInput.addEventListener('keydown', (e) => {
-                const visibleItems = getVisibleItems();
-                if (e.key === 'ArrowDown') {
-                    e.preventDefault();
-                    if (selectedIndex < visibleItems.length - 1) selectedIndex++;
-                    updateSelection(visibleItems);
-                } else if (e.key === 'ArrowUp') {
-                    e.preventDefault();
-                    if (selectedIndex > 0) selectedIndex--;
-                    updateSelection(visibleItems);
-                } else if (e.key === 'Escape') {
-                    e.preventDefault();
-                    searchInput.value = '';
-                    filterApps('');
-                } else if (e.key === 'Enter') {
-                    e.preventDefault();
-                    if (visibleItems.length > 0 && visibleItems[selectedIndex]) {
-                        const link = visibleItems[selectedIndex].querySelector('.spa-link');
-                        if (link) window.location.href = link.href;
-                    }
-                }
-            });
-
-            // Auto-focus search box on any keypress; handle navigation globally
+            // Handle keyboard navigation globally (works with or without search box focus)
             document.addEventListener('keydown', (e) => {
-                if (e.target === searchInput) return;
                 if (e.ctrlKey || e.metaKey || e.altKey) return;
                 const visibleItems = getVisibleItems();
                 if (e.key === 'Escape') {
@@ -302,7 +278,7 @@
                         const link = visibleItems[selectedIndex].querySelector('.spa-link');
                         if (link) window.location.href = link.href;
                     }
-                } else if (e.key.length === 1) {
+                } else if (e.key.length === 1 && e.target !== searchInput) {
                     searchInput.focus();
                 }
             });
