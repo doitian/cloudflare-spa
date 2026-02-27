@@ -184,6 +184,21 @@ export class SessionManager {
         }
         break;
 
+      case 'ice-candidate':
+        // Relay ICE candidate to the other peer
+        if (role === 'creator' && session.joinerWs) {
+          this.sendMessage(session.joinerWs, {
+            type: 'ice-candidate',
+            candidate: message.candidate
+          });
+        } else if (role === 'joiner' && session.creatorWs) {
+          this.sendMessage(session.creatorWs, {
+            type: 'ice-candidate',
+            candidate: message.candidate
+          });
+        }
+        break;
+
       case 'ping':
         // Keep-alive ping
         this.sendMessage(ws, {

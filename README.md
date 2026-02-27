@@ -21,6 +21,8 @@ Inspired by [Simon Willison's post on HTML tools](https://simonwillison.net/2025
 The file sharing app includes:
 - **Real-time Push Notifications**: WebSocket-based signaling using Cloudflare Durable Objects (no polling!)
 - **Peer-to-Peer Transfer**: Files transferred directly between browsers, nothing stored on servers
+- **ICE Trickle**: ICE candidates exchanged individually for faster and more reliable connections
+- **TURN Server Support**: [Cloudflare Realtime TURN](https://developers.cloudflare.com/realtime/turn/) relay for connecting peers behind restrictive NATs
 - **Session Management**: Secure 6-digit session codes for pairing
 - **Chat Support**: Send text messages alongside file transfers
 - **Progress Tracking**: Real-time progress bars for file transfers

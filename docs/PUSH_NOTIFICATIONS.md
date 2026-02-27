@@ -56,7 +56,7 @@ A Cloudflare Durable Object that manages:
 
 Main worker that routes requests:
 - **WebSocket endpoint**: `/api/ws/file-share-session?code={code}&role={creator|joiner}`
-- **Legacy KV endpoints**: Kept for backward compatibility
+- **ICE servers endpoint**: `/api/ice-servers` — returns ICE server configuration including TURN credentials if configured
 - **Static assets**: Serves the SPA files
 
 #### 3. **Frontend** (`public/file-share.html`)
@@ -81,6 +81,12 @@ Updated to use WebSockets instead of polling:
 {
   "type": "answer",
   "answer": RTCSessionDescription
+}
+
+// ICE candidate (trickle ICE)
+{
+  "type": "ice-candidate",
+  "candidate": RTCIceCandidate
 }
 
 // Keep-alive ping
@@ -113,6 +119,12 @@ Updated to use WebSockets instead of polling:
 {
   "type": "answer",
   "answer": RTCSessionDescription
+}
+
+// ICE candidate relayed from peer
+{
+  "type": "ice-candidate",
+  "candidate": RTCIceCandidate
 }
 
 // Error message
@@ -265,6 +277,11 @@ Potential improvements:
 - Verify both peers have stable internet
 - Check WebRTC ICE candidate gathering
 - Review browser WebRTC settings
+
+### ICE Connection Failed
+- This typically means peers cannot establish a direct connection (common with mobile or restrictive NATs)
+- Ensure `TURN_SERVICE_ID` and `TURN_SERVICE_TOKEN` environment variables are configured (uses [Cloudflare Realtime TURN](https://developers.cloudflare.com/realtime/turn/))
+- Check `about:webrtc` (Firefox) or `chrome://webrtc-internals` (Chrome/Edge) for ICE candidate details
 
 ## References
 

@@ -23,6 +23,38 @@ async function handleWebSocketSession(request, env) {
   return stub.fetch(request);
 }
 
+// Return ICE server configuration from Cloudflare Realtime TURN service
+async function handleIceServers(env) {
+  if (!env.TURN_SERVICE_ID || !env.TURN_SERVICE_TOKEN) {
+    return Response.json(
+      { error: 'TURN service not configured' },
+      { status: 500 }
+    );
+  }
+
+  const response = await fetch(
+    `https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_SERVICE_ID}/credentials/generate-ice-servers`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.TURN_SERVICE_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ ttl: 86400 })
+    }
+  );
+
+  if (!response.ok) {
+    return Response.json(
+      { error: `Failed to generate ICE servers: ${response.status}` },
+      { status: 502 }
+    );
+  }
+
+  // Cloudflare returns { iceServers: [...] } which can be used directly
+  return Response.json(await response.json());
+}
+
 // Main fetch handler
 export default {
   async fetch(request, env, ctx) {
@@ -31,6 +63,11 @@ export default {
     // Route WebSocket connections for real-time notifications
     if (url.pathname === '/api/ws/file-share-session') {
       return handleWebSocketSession(request, env);
+    }
+
+    // Return ICE server configuration
+    if (url.pathname === '/api/ice-servers') {
+      return handleIceServers(env);
     }
     
     // For all other requests, serve static assets

@@ -396,14 +396,6 @@
         // Configuration constants
         const CHUNK_SIZE = 16384; // 16KB chunks for file transfer
 
-        // WebRTC configuration
-        const rtcConfig = {
-            iceServers: [
-                { urls: 'stun:turn.cloudflare.com' },
-                { urls: 'stun:stun.freeswitch.org' }
-            ]
-        };
-
         let peerConnection = null;
         let dataChannel = null;
         let sessionCode = null;
@@ -413,6 +405,7 @@
         let receivedSize = 0;
         let fileMetadata = null;
         let signalingWs = null; // WebSocket for signaling
+        let pendingCandidates = []; // Buffer for ICE candidates received before remote description is set
 
         // DOM elements
         const choiceSection = document.getElementById('choiceSection');
@@ -455,6 +448,56 @@
                 const className = isNumber ? 'number' : 'letter';
                 return `<span class="${className}">${char}</span>`;
             }).join('');
+        }
+
+        // Fetch ICE server configuration from Cloudflare Realtime TURN service
+        async function getIceConfig() {
+            const response = await fetch('/api/ice-servers');
+            if (!response.ok) {
+                throw new Error('Failed to fetch ICE servers');
+            }
+            const config = await response.json();
+            return { iceServers: config.iceServers };
+        }
+
+        // Setup ICE candidate trickle on the peer connection
+        function setupIceTrickle() {
+            peerConnection.onicecandidate = (event) => {
+                if (event.candidate && signalingWs && signalingWs.readyState === WebSocket.OPEN) {
+                    signalingWs.send(JSON.stringify({
+                        type: 'ice-candidate',
+                        candidate: event.candidate
+                    }));
+                }
+            };
+
+            peerConnection.oniceconnectionstatechange = () => {
+                console.log('ICE connection state:', peerConnection.iceConnectionState);
+                switch (peerConnection.iceConnectionState) {
+                    case 'failed':
+                        showStatus('error', 'Connection failed. The peers could not connect.');
+                        break;
+                    case 'disconnected':
+                        showStatus('warning', 'Connection interrupted. Trying to reconnect...');
+                        break;
+                    case 'connected':
+                    case 'completed':
+                        showStatus('success', 'Connected! You can now send files and messages.');
+                        break;
+                }
+            };
+        }
+
+        // Flush any ICE candidates that were received before the remote description was set
+        async function flushPendingCandidates() {
+            for (const candidate of pendingCandidates) {
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (error) {
+                    console.error('Failed to add buffered ICE candidate:', error);
+                }
+            }
+            pendingCandidates = [];
         }
 
         // Setup WebSocket connection for signaling
@@ -505,25 +548,14 @@
                     // Joiner received the offer from creator
                     if (!isCreator && message.offer) {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(message.offer));
+                        await flushPendingCandidates();
                         
                         // Create answer
                         const answer = await peerConnection.createAnswer();
                         await peerConnection.setLocalDescription(answer);
 
-                        // Wait for ICE candidates to be gathered
-                        // Note: Handler is set after setLocalDescription, but since JavaScript is 
-                        // single-threaded, it will be in place before ICE candidates are generated
-                        await new Promise((resolve) => {
-                            const timeout = setTimeout(resolve, 1000);
-                            peerConnection.onicecandidate = (event) => {
-                                if (!event.candidate) {
-                                    clearTimeout(timeout);
-                                    resolve();
-                                }
-                            };
-                        });
-
-                        // Send answer back through signaling WebSocket
+                        // Send answer back through signaling WebSocket.
+                        // ICE candidates will trickle separately.
                         signalingWs.send(JSON.stringify({
                             type: 'answer',
                             answer: peerConnection.localDescription
@@ -542,7 +574,19 @@
                     // Creator received the answer from joiner
                     if (isCreator && message.answer) {
                         await peerConnection.setRemoteDescription(new RTCSessionDescription(message.answer));
+                        await flushPendingCandidates();
                         // Connection will be established via dataChannel.onopen
+                    }
+                    break;
+
+                case 'ice-candidate':
+                    // Received an ICE candidate from the other peer
+                    if (peerConnection && message.candidate) {
+                        if (peerConnection.remoteDescription) {
+                            await peerConnection.addIceCandidate(new RTCIceCandidate(message.candidate));
+                        } else {
+                            pendingCandidates.push(message.candidate);
+                        }
                     }
                     break;
 
@@ -574,11 +618,15 @@
             showStatus('info', 'Creating session...');
 
             try {
-                // Setup WebSocket connection first
-                await setupSignalingWebSocket(sessionCode, 'creator');
+                // Fetch ICE server config (includes TURN if configured) and setup WebSocket
+                const [rtcConfig] = await Promise.all([
+                    getIceConfig(),
+                    setupSignalingWebSocket(sessionCode, 'creator')
+                ]);
 
                 // Create peer connection
                 peerConnection = new RTCPeerConnection(rtcConfig);
+                setupIceTrickle();
                 
                 // Create data channel
                 dataChannel = peerConnection.createDataChannel('fileTransfer');
@@ -588,20 +636,7 @@
                 const offer = await peerConnection.createOffer();
                 await peerConnection.setLocalDescription(offer);
 
-                // Wait for ICE candidates to be gathered
-                // Note: Handler is set after setLocalDescription, but since JavaScript is 
-                // single-threaded, it will be in place before ICE candidates are generated
-                await new Promise((resolve) => {
-                    const timeout = setTimeout(resolve, 1000);
-                    peerConnection.onicecandidate = (event) => {
-                        if (!event.candidate) {
-                            clearTimeout(timeout);
-                            resolve();
-                        }
-                    };
-                });
-
-                // Send offer through WebSocket
+                // Send offer immediately; ICE candidates will trickle separately
                 signalingWs.send(JSON.stringify({
                     type: 'offer',
                     offer: peerConnection.localDescription
@@ -635,11 +670,15 @@
                 transferSection.classList.remove('hidden');
                 showStatus('info', 'Connecting to session...');
 
-                // Setup WebSocket connection
-                await setupSignalingWebSocket(sessionCode, 'joiner');
+                // Fetch ICE server config (includes TURN if configured) and setup WebSocket
+                const [rtcConfig] = await Promise.all([
+                    getIceConfig(),
+                    setupSignalingWebSocket(sessionCode, 'joiner')
+                ]);
 
                 // Create peer connection
                 peerConnection = new RTCPeerConnection(rtcConfig);
+                setupIceTrickle();
 
                 // Handle data channel
                 peerConnection.ondatachannel = (event) => {
