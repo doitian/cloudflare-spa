@@ -503,7 +503,11 @@
         // Flush any ICE candidates that were received before the remote description was set
         async function flushPendingCandidates() {
             for (const candidate of pendingCandidates) {
-                await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                try {
+                    await peerConnection.addIceCandidate(new RTCIceCandidate(candidate));
+                } catch (error) {
+                    console.error('Failed to add buffered ICE candidate:', error);
+                }
             }
             pendingCandidates = [];
         }
@@ -562,8 +566,8 @@
                         const answer = await peerConnection.createAnswer();
                         await peerConnection.setLocalDescription(answer);
 
-                        // Send answer back through signaling WebSocket
-                        // ICE candidates will trickle separately
+                        // Send answer back through signaling WebSocket.
+                        // ICE candidates will trickle separately.
                         signalingWs.send(JSON.stringify({
                             type: 'answer',
                             answer: peerConnection.localDescription

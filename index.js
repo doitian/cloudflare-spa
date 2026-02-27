@@ -47,7 +47,9 @@ async function handleIceServers(env) {
 
       if (response.ok) {
         const data = await response.json();
-        if (data.iceServers) {
+        if (Array.isArray(data.iceServers)) {
+          iceServers.push(...data.iceServers);
+        } else if (data.iceServers) {
           iceServers.push(data.iceServers);
         }
       }
