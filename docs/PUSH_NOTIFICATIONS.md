@@ -280,7 +280,7 @@ Potential improvements:
 
 ### ICE Connection Failed
 - This typically means peers cannot establish a direct connection (common with mobile or restrictive NATs)
-- Configure a TURN server via `TURN_SERVICE_ID` and `TURN_SERVICE_TOKEN` environment variables (uses Cloudflare Calls TURN)
+- Ensure `TURN_SERVICE_ID` and `TURN_SERVICE_TOKEN` environment variables are configured (uses [Cloudflare Realtime TURN](https://developers.cloudflare.com/realtime/turn/))
 - Check `about:webrtc` (Firefox) or `chrome://webrtc-internals` (Chrome/Edge) for ICE candidate details
 
 ## References

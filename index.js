@@ -23,42 +23,36 @@ async function handleWebSocketSession(request, env) {
   return stub.fetch(request);
 }
 
-// Return ICE server configuration, including TURN credentials if available
+// Return ICE server configuration from Cloudflare Realtime TURN service
 async function handleIceServers(env) {
-  const iceServers = [
-    { urls: 'stun:stun.cloudflare.com:3478' },
-    { urls: 'stun:stun.l.google.com:19302' }
-  ];
-
-  // Generate TURN credentials via Cloudflare Calls API if configured
-  if (env.TURN_SERVICE_ID && env.TURN_SERVICE_TOKEN) {
-    try {
-      const response = await fetch(
-        `https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_SERVICE_ID}/credentials/generate`,
-        {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${env.TURN_SERVICE_TOKEN}`,
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ ttl: 86400 })
-        }
-      );
-
-      if (response.ok) {
-        const data = await response.json();
-        if (Array.isArray(data.iceServers)) {
-          iceServers.push(...data.iceServers);
-        } else if (data.iceServers) {
-          iceServers.push(data.iceServers);
-        }
-      }
-    } catch (error) {
-      console.error('Failed to get TURN credentials:', error);
-    }
+  if (!env.TURN_SERVICE_ID || !env.TURN_SERVICE_TOKEN) {
+    return Response.json(
+      { error: 'TURN service not configured' },
+      { status: 500 }
+    );
   }
 
-  return Response.json({ iceServers });
+  const response = await fetch(
+    `https://rtc.live.cloudflare.com/v1/turn/keys/${env.TURN_SERVICE_ID}/credentials/generate-ice-servers`,
+    {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${env.TURN_SERVICE_TOKEN}`,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({ ttl: 86400 })
+    }
+  );
+
+  if (!response.ok) {
+    return Response.json(
+      { error: `Failed to generate ICE servers: ${response.status}` },
+      { status: 502 }
+    );
+  }
+
+  // Cloudflare returns { iceServers: [...] } which can be used directly
+  return Response.json(await response.json());
 }
 
 // Main fetch handler
