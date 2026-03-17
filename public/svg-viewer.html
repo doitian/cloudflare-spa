@@ -413,8 +413,11 @@
                     originalWidth = width;
                     originalHeight = height;
                 } else {
-                    originalWidth = parseFloat(svgElement.getAttribute('width')) || 300;
-                    originalHeight = parseFloat(svgElement.getAttribute('height')) || 150;
+                    const styleAttrForDims = svgElement.getAttribute('style') || '';
+                    originalWidth = parseFloat(svgElement.getAttribute('width')) ||
+                        parseStyleProp(styleAttrForDims, 'width') || 300;
+                    originalHeight = parseFloat(svgElement.getAttribute('height')) ||
+                        parseStyleProp(styleAttrForDims, 'height') || 150;
                 }
 
                 // Set viewBox if not present
@@ -425,6 +428,26 @@
                 // Remove fixed width/height to make it responsive
                 svgElement.removeAttribute('width');
                 svgElement.removeAttribute('height');
+
+                // Clean up inline style: remove properties that override responsive sizing or misplace the SVG
+                const styleAttr = svgElement.getAttribute('style');
+                if (styleAttr) {
+                    const propsToRemove = ['width', 'height', 'position', 'left', 'top', 'right', 'bottom', 'pointer-events'];
+                    const cleanedStyle = styleAttr
+                        .split(';')
+                        .map(s => s.trim())
+                        .filter(s => {
+                            if (!s) return false;
+                            const prop = s.split(':')[0].trim().toLowerCase();
+                            return !propsToRemove.includes(prop);
+                        })
+                        .join('; ');
+                    if (cleanedStyle) {
+                        svgElement.setAttribute('style', cleanedStyle);
+                    } else {
+                        svgElement.removeAttribute('style');
+                    }
+                }
 
                 // Show viewer and controls
                 viewerSection.classList.add('active');
@@ -445,11 +468,63 @@
         function extractSVGFromHTML(html) {
             const parser = new DOMParser();
             const doc = parser.parseFromString(html, 'text/html');
-            const svgEl = doc.querySelector('svg');
-            if (svgEl) {
-                return new XMLSerializer().serializeToString(svgEl);
+            const svgEls = Array.from(doc.querySelectorAll('svg'));
+            if (svgEls.length === 0) return null;
+            if (svgEls.length === 1) {
+                return new XMLSerializer().serializeToString(svgEls[0]);
             }
-            return null;
+            return mergeMultipleSVGs(svgEls);
+        }
+
+        const _parseStylePropCache = {};
+        function parseStyleProp(style, prop) {
+            if (!_parseStylePropCache[prop]) {
+                _parseStylePropCache[prop] = new RegExp('(?:^|;)\\s*' + prop + '\\s*:\\s*([^;]+)', 'i');
+            }
+            const m = style.match(_parseStylePropCache[prop]);
+            return m ? parseFloat(m[1]) : null;
+        }
+
+        function mergeMultipleSVGs(svgEls) {
+            const ns = 'http://www.w3.org/2000/svg';
+            let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+
+            const items = svgEls.map(el => {
+                const style = el.getAttribute('style') || '';
+                const left   = parseStyleProp(style, 'left')   ?? 0;
+                const top    = parseStyleProp(style, 'top')     ?? 0;
+                const width  = parseStyleProp(style, 'width')   ?? (parseFloat(el.getAttribute('width'))  || 0);
+                const height = parseStyleProp(style, 'height')  ?? (parseFloat(el.getAttribute('height')) || 0);
+                minX = Math.min(minX, left);
+                minY = Math.min(minY, top);
+                maxX = Math.max(maxX, left + width);
+                maxY = Math.max(maxY, top + height);
+                return { el, left, top, width, height };
+            });
+
+            if (!isFinite(minX) || !isFinite(maxX)) { minX = 0; minY = 0; maxX = 300; maxY = 150; }
+            const totalWidth  = maxX - minX || 300;
+            const totalHeight = maxY - minY || 150;
+
+            const merged = document.createElementNS(ns, 'svg');
+            merged.setAttribute('xmlns', ns);
+            merged.setAttribute('viewBox', `${minX} ${minY} ${totalWidth} ${totalHeight}`);
+
+            for (const { el, left, top, width, height } of items) {
+                const nested = document.createElementNS(ns, 'svg');
+                nested.setAttribute('x', left);
+                nested.setAttribute('y', top);
+                nested.setAttribute('width', width);
+                nested.setAttribute('height', height);
+                const viewBox = el.getAttribute('viewBox');
+                if (viewBox) nested.setAttribute('viewBox', viewBox);
+                for (const child of Array.from(el.childNodes)) {
+                    nested.appendChild(child.cloneNode(true));
+                }
+                merged.appendChild(nested);
+            }
+
+            return new XMLSerializer().serializeToString(merged);
         }
 
         function loadSVGText(text) {
