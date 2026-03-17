@@ -469,6 +469,16 @@
             return doc.body.textContent.replace(/\n{3,}/g, '\n\n').trim();
         }
 
+        // ── Blob helpers ───────────────────────────────────────────────────────
+        function blobToDataUrl(blob) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result);
+                reader.onerror = reject;
+                reader.readAsDataURL(blob);
+            });
+        }
+
         // ── Clipboard reading ──────────────────────────────────────────────────
         async function readClipboard() {
             showStatus('info', 'Reading clipboard…');
@@ -485,7 +495,11 @@
                         for (const type of item.types) {
                             try {
                                 const blob = await item.getType(type);
-                                clipboardData[type] = await blob.text();
+                                if (type.startsWith('image/')) {
+                                    clipboardData[type] = await blobToDataUrl(blob);
+                                } else {
+                                    clipboardData[type] = await blob.text();
+                                }
                             } catch (e) {
                                 // skip unreadable types
                             }
@@ -649,12 +663,28 @@
                     </div>`;
             }
             if (type.startsWith('image/')) {
+                const subtype = type.includes('/') ? type.split('/')[1] : '';
+                const ext = (subtype.split('+')[0] || 'png').replace(/[^a-z0-9]/gi, '');
+                const filename = `clipboard-image.${ext || 'png'}`;
+                const safeDataUrl = typeof value === 'string' && value.startsWith('data:image/') ? value : '';
+                if (!safeDataUrl) {
+                    return `<div class="section">
+                        <div class="section-header">
+                            <span class="section-title">Image</span>
+                            <span class="type-badge">${escHtml(type)}</span>
+                        </div>
+                        <p style="color:#999;font-size:0.9em">Image data could not be displayed.</p>
+                    </div>`;
+                }
                 return `<div class="section">
                     <div class="section-header">
                         <span class="section-title">Image</span>
                         <span class="type-badge">${escHtml(type)}</span>
                     </div>
-                    <p style="color:#999;font-size:0.9em">Image data not shown (binary)</p>
+                    <img src="${safeDataUrl}" style="max-width:100%;border-radius:4px;border:1px solid #e0e0e0;display:block" alt="Clipboard image">
+                    <div class="copy-row" style="margin-top:12px">
+                        <a href="${safeDataUrl}" download="${escHtml(filename)}" class="btn-secondary" style="text-decoration:none;display:inline-block">⬇ Download Image</a>
+                    </div>
                 </div>`;
             }
             return buildRawContent(tabLabel(type), value, type);
