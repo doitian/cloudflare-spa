@@ -495,7 +495,7 @@
                         for (const type of item.types) {
                             try {
                                 const blob = await item.getType(type);
-                                if (type.startsWith('image/')) {
+                                if (type.startsWith('image/') && type !== 'image/svg+xml') {
                                     clipboardData[type] = await blobToDataUrl(blob);
                                 } else {
                                     clipboardData[type] = await blob.text();
@@ -612,19 +612,38 @@
             });
 
             // If HTML is present, add a combined "Markdown Preview" tab
+            let extraTabIdx = ordered.length;
             if (clipboardData['text/html']) {
                 const mdText = htmlToMarkdown(clipboardData['text/html']);
-                const tabIdx = ordered.length;
+                const mdTabIdx = extraTabIdx++;
                 const tab = document.createElement('button');
                 tab.className = 'tab';
                 tab.textContent = 'Markdown';
-                tab.onclick = () => switchTab(tabIdx, tabIdx + 1);
+                tab.onclick = () => switchTab(mdTabIdx, 0);
                 tabBar.appendChild(tab);
 
                 const content = document.createElement('div');
                 content.className = 'tab-content';
                 content.innerHTML = buildRawContent('Generated Markdown', mdText, 'markdown');
                 tabContents.appendChild(content);
+
+                // If HTML contains an SVG element, add an SVG Preview tab
+                const htmlDoc = new DOMParser().parseFromString(clipboardData['text/html'], 'text/html');
+                const svgEl = htmlDoc.querySelector('svg');
+                if (svgEl) {
+                    const svgText = new XMLSerializer().serializeToString(svgEl);
+                    const svgTabIdx = extraTabIdx++;
+                    const svgTab = document.createElement('button');
+                    svgTab.className = 'tab';
+                    svgTab.textContent = 'SVG Preview';
+                    svgTab.onclick = () => switchTab(svgTabIdx, 0);
+                    tabBar.appendChild(svgTab);
+
+                    const svgContent = document.createElement('div');
+                    svgContent.className = 'tab-content';
+                    svgContent.innerHTML = buildSVGContent(svgText);
+                    tabContents.appendChild(svgContent);
+                }
             }
         }
 
@@ -640,11 +659,15 @@
                 'text/rtf': 'RTF',
                 'image/png': 'PNG Image',
                 'image/jpeg': 'JPEG Image',
+                'image/svg+xml': 'SVG Image',
             };
             return map[type] || type;
         }
 
         function buildTabContent(type, value) {
+            if (type === 'image/svg+xml') {
+                return buildSVGContent(value);
+            }
             if (type === 'text/html') {
                 return `
                     <div class="section">
@@ -688,6 +711,28 @@
                 </div>`;
             }
             return buildRawContent(tabLabel(type), value, type);
+        }
+
+        function buildSVGContent(svgText) {
+            const svgViewerUrl = `svg-viewer.html`;
+            return `
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">SVG Preview</span>
+                        <span class="type-badge">image/svg+xml</span>
+                    </div>
+                    <div class="content-box html-preview" style="background:#fff;min-height:80px">${svgText}</div>
+                    <div class="copy-row" style="margin-top:8px">
+                        <a href="${svgViewerUrl}" target="_blank" class="btn-secondary" style="text-decoration:none;display:inline-block;padding:6px 16px;font-size:0.85em">🔍 Open SVG Viewer</a>
+                    </div>
+                </div>
+                <div class="section">
+                    <div class="section-header">
+                        <span class="section-title">SVG Source</span>
+                    </div>
+                    <div class="content-box">${escHtml(svgText)}</div>
+                    <div class="char-count">${svgText.length.toLocaleString()} characters</div>
+                </div>`;
         }
 
         function buildRawContent(title, value, type) {

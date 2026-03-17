@@ -59,6 +59,23 @@
             transition: all 0.3s ease;
         }
 
+        .paste-btn {
+            margin-top: 15px;
+            padding: 10px 20px;
+            border: 2px solid #667eea;
+            background: white;
+            color: #667eea;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            transition: all 0.2s ease;
+        }
+
+        .paste-btn:hover {
+            background: #667eea;
+            color: white;
+        }
+
         .upload-section:hover {
             background: #f0f2ff;
             border-color: #764ba2;
@@ -253,7 +270,8 @@
             <label for="fileInput" class="upload-label">
                 📁 Click to upload an SVG file
             </label>
-            <p class="upload-hint">or drag and drop an SVG file here</p>
+            <p class="upload-hint">or drag and drop an SVG file here, or press Ctrl+V / ⌘V to paste</p>
+            <button class="paste-btn" id="pasteBtn">📋 Paste from Clipboard</button>
         </div>
 
         <div class="viewer-section" id="viewerSection">
@@ -337,6 +355,17 @@
             fileInput.click();
         });
 
+        // Paste button
+        document.getElementById('pasteBtn').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            await pasteFromClipboard();
+        });
+
+        // Global paste event (Ctrl+V / ⌘V)
+        document.addEventListener('paste', (e) => {
+            handlePasteEvent(e.clipboardData);
+        });
+
         function handleFileSelect(e) {
             const file = e.target.files[0];
             if (file) {
@@ -404,11 +433,123 @@
 
                 // Update info section
                 document.getElementById('fileName').textContent = `File: ${fileName}`;
-                document.getElementById('fileSize').textContent = `Size: ${formatFileSize(file.size)}`;
+                const byteSize = file ? file.size : new TextEncoder().encode(content).length;
+                document.getElementById('fileSize').textContent = `Size: ${formatFileSize(byteSize)}`;
                 document.getElementById('dimensions').textContent = `Dimensions: ${originalWidth} × ${originalHeight}`;
 
             } catch (error) {
                 showError('Error displaying SVG: ' + error.message);
+            }
+        }
+
+        function extractSVGFromHTML(html) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(html, 'text/html');
+            const svgEl = doc.querySelector('svg');
+            if (svgEl) {
+                return new XMLSerializer().serializeToString(svgEl);
+            }
+            return null;
+        }
+
+        function loadSVGText(text) {
+            const trimmed = text.trim();
+            if (/^<svg[\s>]/i.test(trimmed)) {
+                fileName = 'clipboard.svg';
+                svgContent = trimmed;
+                displaySVG(svgContent);
+            } else {
+                showError('No SVG content found in clipboard');
+            }
+        }
+
+        function handlePasteEvent(clipboardData) {
+            if (!clipboardData) return;
+            const items = Array.from(clipboardData.items);
+
+            // 1. SVG type directly
+            const svgItem = items.find(item => item.type === 'image/svg+xml');
+            if (svgItem) {
+                const file = svgItem.getAsFile();
+                if (file) {
+                    fileName = 'clipboard.svg';
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        svgContent = e.target.result;
+                        displaySVG(svgContent);
+                    };
+                    reader.readAsText(file);
+                    return;
+                }
+            }
+
+            // 2. HTML containing SVG
+            const htmlItem = items.find(item => item.type === 'text/html');
+            if (htmlItem) {
+                htmlItem.getAsString((html) => {
+                    const svg = extractSVGFromHTML(html);
+                    if (svg) {
+                        fileName = 'clipboard.svg';
+                        svgContent = svg;
+                        displaySVG(svgContent);
+                    } else {
+                        showError('No SVG content found in pasted HTML');
+                    }
+                });
+                return;
+            }
+
+            // 3. Plain text SVG
+            const textItem = items.find(item => item.type === 'text/plain');
+            if (textItem) {
+                textItem.getAsString(loadSVGText);
+                return;
+            }
+
+            showError('No SVG content found in clipboard');
+        }
+
+        async function pasteFromClipboard() {
+            try {
+                if (!navigator.clipboard || !navigator.clipboard.read) {
+                    showError('Clipboard API not supported in this browser. Try pressing Ctrl+V / ⌘V instead.');
+                    return;
+                }
+                const items = await navigator.clipboard.read();
+                for (const item of items) {
+                    if (item.types.includes('image/svg+xml')) {
+                        const blob = await item.getType('image/svg+xml');
+                        const text = await blob.text();
+                        fileName = 'clipboard.svg';
+                        svgContent = text;
+                        displaySVG(svgContent);
+                        return;
+                    }
+                    if (item.types.includes('text/html')) {
+                        const blob = await item.getType('text/html');
+                        const html = await blob.text();
+                        const svg = extractSVGFromHTML(html);
+                        if (svg) {
+                            fileName = 'clipboard.svg';
+                            svgContent = svg;
+                            displaySVG(svgContent);
+                            return;
+                        }
+                    }
+                    if (item.types.includes('text/plain')) {
+                        const blob = await item.getType('text/plain');
+                        const text = await blob.text();
+                        loadSVGText(text);
+                        return;
+                    }
+                }
+                showError('No SVG content found in clipboard');
+            } catch (err) {
+                if (err.name === 'NotAllowedError') {
+                    showError('Clipboard access denied. Please allow clipboard permissions and try again.');
+                } else {
+                    showError('Error reading clipboard: ' + err.message);
+                }
             }
         }
 
