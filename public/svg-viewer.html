@@ -413,8 +413,13 @@
                     originalWidth = width;
                     originalHeight = height;
                 } else {
-                    originalWidth = parseFloat(svgElement.getAttribute('width')) || 300;
-                    originalHeight = parseFloat(svgElement.getAttribute('height')) || 150;
+                    const styleAttrForDims = svgElement.getAttribute('style') || '';
+                    const styleWidthMatch = styleAttrForDims.match(/(?:^|;)\s*width\s*:\s*([^;]+)/i);
+                    const styleHeightMatch = styleAttrForDims.match(/(?:^|;)\s*height\s*:\s*([^;]+)/i);
+                    originalWidth = parseFloat(svgElement.getAttribute('width')) ||
+                        (styleWidthMatch ? parseFloat(styleWidthMatch[1]) : 0) || 300;
+                    originalHeight = parseFloat(svgElement.getAttribute('height')) ||
+                        (styleHeightMatch ? parseFloat(styleHeightMatch[1]) : 0) || 150;
                 }
 
                 // Set viewBox if not present
@@ -425,6 +430,26 @@
                 // Remove fixed width/height to make it responsive
                 svgElement.removeAttribute('width');
                 svgElement.removeAttribute('height');
+
+                // Clean up inline style: remove properties that override responsive sizing or misplace the SVG
+                const styleAttr = svgElement.getAttribute('style');
+                if (styleAttr) {
+                    const propsToRemove = ['width', 'height', 'position', 'left', 'top', 'right', 'bottom', 'pointer-events'];
+                    const cleanedStyle = styleAttr
+                        .split(';')
+                        .map(s => s.trim())
+                        .filter(s => {
+                            if (!s) return false;
+                            const prop = s.split(':')[0].trim().toLowerCase();
+                            return !propsToRemove.includes(prop);
+                        })
+                        .join('; ');
+                    if (cleanedStyle) {
+                        svgElement.setAttribute('style', cleanedStyle);
+                    } else {
+                        svgElement.removeAttribute('style');
+                    }
+                }
 
                 // Show viewer and controls
                 viewerSection.classList.add('active');
