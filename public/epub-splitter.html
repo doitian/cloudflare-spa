@@ -934,7 +934,7 @@
                     const blob = await generatePartEpub(epubInfo, parts[i], i, n);
                     const baseName = epubInfo.fileName.replace(/\.epub$/i, '');
                     splitParts.push({
-                        name: baseName + '_part' + (i + 1) + 'of' + n + '.epub',
+                        name: baseName + '_part_' + (i + 1) + '_of_' + n + '.epub',
                         blob,
                         fileCount: parts[i].length,
                     });
