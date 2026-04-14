@@ -1,0 +1,1008 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EPUB Splitter - Cloudflare SPA</title>
+    <link rel="icon" type="image/svg+xml" href="favicon.svg">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 860px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            padding: 40px;
+        }
+
+        h1 {
+            color: #667eea;
+            margin-bottom: 20px;
+            font-size: 2em;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-bottom: 20px;
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 500;
+        }
+
+        .back-link:hover {
+            text-decoration: underline;
+        }
+
+        .upload-section {
+            margin-bottom: 30px;
+            padding: 30px;
+            border: 2px dashed #667eea;
+            border-radius: 8px;
+            text-align: center;
+            background: #f8f9ff;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .upload-section:hover {
+            background: #f0f2ff;
+            border-color: #764ba2;
+        }
+
+        .upload-section.drag-over {
+            background: #e8ebff;
+            border-color: #764ba2;
+        }
+
+        .upload-section input[type="file"] {
+            display: none;
+        }
+
+        .upload-label {
+            font-size: 1.2em;
+            color: #667eea;
+            cursor: pointer;
+        }
+
+        .upload-hint {
+            margin-top: 10px;
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .info-card {
+            background: #f8f9ff;
+            border: 1px solid #e0e0ff;
+            border-radius: 8px;
+            padding: 20px;
+            margin-bottom: 24px;
+            display: none;
+        }
+
+        .info-card.active {
+            display: block;
+        }
+
+        .info-card h3 {
+            color: #667eea;
+            margin-bottom: 12px;
+        }
+
+        .info-row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 5px;
+            font-size: 0.95em;
+        }
+
+        .info-row .label {
+            color: #666;
+            min-width: 150px;
+        }
+
+        .info-row .value {
+            font-weight: 500;
+        }
+
+        .controls-section {
+            display: none;
+            margin-bottom: 30px;
+        }
+
+        .controls-section.active {
+            display: block;
+        }
+
+        .section-title {
+            font-size: 1.1em;
+            font-weight: 600;
+            color: #444;
+            margin-bottom: 15px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #f0f0f0;
+        }
+
+        .control-group {
+            margin-bottom: 20px;
+        }
+
+        .control-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+            color: #333;
+        }
+
+        .parts-input {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .parts-input input[type="number"] {
+            width: 90px;
+            padding: 10px;
+            font-size: 1.1em;
+            border: 2px solid #667eea;
+            border-radius: 6px;
+            text-align: center;
+            outline: none;
+            transition: box-shadow 0.2s;
+        }
+
+        .parts-input input[type="number"]:focus {
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.15);
+        }
+
+        .parts-hint {
+            color: #666;
+            font-size: 0.9em;
+        }
+
+        .preview-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.9em;
+            margin-top: 15px;
+        }
+
+        .preview-table th {
+            background: #667eea;
+            color: white;
+            padding: 10px 12px;
+            text-align: left;
+            font-weight: 500;
+        }
+
+        .preview-table th:first-child {
+            border-radius: 6px 0 0 0;
+        }
+
+        .preview-table th:last-child {
+            border-radius: 0 6px 0 0;
+        }
+
+        .preview-table td {
+            padding: 9px 12px;
+            border-bottom: 1px solid #eee;
+            vertical-align: top;
+        }
+
+        .preview-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .preview-table tr:hover td {
+            background: #f8f9ff;
+        }
+
+        .file-names-mini {
+            font-size: 0.82em;
+            color: #888;
+            margin-top: 3px;
+            max-height: 60px;
+            overflow: hidden;
+        }
+
+        .split-btn {
+            display: block;
+            width: 100%;
+            padding: 14px 40px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 1.05em;
+            font-weight: 500;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            margin-top: 20px;
+        }
+
+        .split-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .split-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .results-section {
+            display: none;
+            margin-top: 10px;
+        }
+
+        .results-section.active {
+            display: block;
+        }
+
+        .download-list {
+            list-style: none;
+        }
+
+        .download-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 14px 16px;
+            background: #f8f9ff;
+            border: 1px solid #e0e0ff;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            gap: 12px;
+        }
+
+        .download-item-info {
+            font-size: 0.95em;
+            min-width: 0;
+        }
+
+        .download-item-info strong {
+            color: #333;
+            display: block;
+            word-break: break-all;
+        }
+
+        .download-item-info span {
+            color: #666;
+            font-size: 0.88em;
+        }
+
+        .download-btn-item {
+            padding: 8px 20px;
+            border: none;
+            background: #667eea;
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            white-space: nowrap;
+            flex-shrink: 0;
+            transition: background 0.2s;
+        }
+
+        .download-btn-item:hover {
+            background: #764ba2;
+        }
+
+        .download-all-btn {
+            padding: 12px 30px;
+            border: none;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 500;
+            margin-top: 12px;
+            transition: transform 0.2s ease;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .download-all-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.2);
+        }
+
+        .error-message {
+            display: none;
+            padding: 15px;
+            background: #ffe6e6;
+            border-left: 4px solid #ff4444;
+            border-radius: 4px;
+            color: #cc0000;
+            margin-bottom: 20px;
+        }
+
+        .error-message.active {
+            display: block;
+        }
+
+        .processing-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 1000;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .processing-overlay.active {
+            display: flex;
+        }
+
+        .processing-spinner {
+            background: white;
+            padding: 30px 40px;
+            border-radius: 12px;
+            text-align: center;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            min-width: 240px;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid #f0f0f0;
+            border-top-color: #667eea;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin: 0 auto 15px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .progress-text {
+            color: #666;
+            font-size: 0.9em;
+            margin-top: 8px;
+        }
+
+        .note {
+            font-size: 0.85em;
+            color: #888;
+            margin-top: 8px;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">← Back to Home</a>
+        <h1>📚 EPUB Splitter</h1>
+
+        <div class="error-message" id="errorMessage"></div>
+
+        <div class="upload-section" id="uploadSection">
+            <input type="file" id="fileInput" accept=".epub">
+            <label for="fileInput" class="upload-label">📖 Click to upload an EPUB file</label>
+            <p class="upload-hint">or drag and drop · Supports EPUB2 and EPUB3</p>
+        </div>
+
+        <div class="info-card" id="infoCard">
+            <h3>📖 Book Info</h3>
+            <div class="info-row"><span class="label">Title:</span><span class="value" id="infoTitle">-</span></div>
+            <div class="info-row"><span class="label">Author:</span><span class="value" id="infoAuthor">-</span></div>
+            <div class="info-row"><span class="label">Format:</span><span class="value" id="infoFormat">-</span></div>
+            <div class="info-row"><span class="label">File size:</span><span class="value" id="infoFileSize">-</span></div>
+            <div class="info-row"><span class="label">HTML content files:</span><span class="value" id="infoChapters">-</span></div>
+        </div>
+
+        <div class="controls-section" id="controlsSection">
+            <div class="section-title">Split Options</div>
+
+            <div class="control-group">
+                <label for="partsInput">Number of parts:</label>
+                <div class="parts-input">
+                    <input type="number" id="partsInput" min="2" value="2">
+                    <span class="parts-hint" id="partsHint"></span>
+                </div>
+                <p class="note">Each part receives consecutive HTML files sized as evenly as possible.</p>
+            </div>
+
+            <div id="previewArea"></div>
+
+            <button class="split-btn" id="splitBtn">✂️ Split EPUB</button>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="section-title">Download Parts</div>
+            <ul class="download-list" id="downloadList"></ul>
+            <button class="download-all-btn" id="downloadAllBtn">⬇️ Download All as ZIP</button>
+        </div>
+    </div>
+
+    <div class="processing-overlay" id="processingOverlay">
+        <div class="processing-spinner">
+            <div class="spinner"></div>
+            <p id="processingText">Processing EPUB…</p>
+            <p class="progress-text" id="progressText"></p>
+        </div>
+    </div>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <script>
+        // ── State ──────────────────────────────────────────────────────────────
+        let epubInfo = null;    // parsed epub metadata
+        let splitParts = null;  // [{name, blob, fileCount}]
+
+        // ── Helpers ────────────────────────────────────────────────────────────
+
+        function formatSize(bytes) {
+            if (bytes < 1024) return bytes + ' B';
+            if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+            return (bytes / (1024 * 1024)).toFixed(1) + ' MB';
+        }
+
+        function getDir(path) {
+            const idx = path.lastIndexOf('/');
+            return idx >= 0 ? path.substring(0, idx + 1) : '';
+        }
+
+        /**
+         * Resolve a relative URI against a base directory path.
+         * baseDir must end with '/' or be empty.
+         */
+        function resolvePath(baseDir, relative) {
+            if (!relative) return baseDir;
+            if (relative.startsWith('/')) return relative.substring(1);
+            const parts = (baseDir + relative).split('/');
+            const out = [];
+            for (const p of parts) {
+                if (p === '..') out.pop();
+                else if (p !== '.') out.push(p);
+            }
+            return out.join('/');
+        }
+
+        /**
+         * Resolve an epub URI (stripping fragment, decoding percent-encoding).
+         */
+        function resolveEpubHref(baseDir, href) {
+            const noFrag = (href || '').split('#')[0];
+            let decoded = noFrag;
+            try { decoded = decodeURIComponent(noFrag); } catch (_) { /* keep original */ }
+            return resolvePath(baseDir, decoded);
+        }
+
+        function showError(msg) {
+            const el = document.getElementById('errorMessage');
+            el.textContent = msg;
+            el.classList.add('active');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.remove('active');
+        }
+
+        // ── EPUB parsing ───────────────────────────────────────────────────────
+
+        async function parseEpub(file) {
+            const arrayBuffer = await file.arrayBuffer();
+            const zip = await JSZip.loadAsync(arrayBuffer);
+
+            // container.xml → OPF path
+            const containerFile = zip.file('META-INF/container.xml');
+            if (!containerFile) throw new Error('Invalid EPUB: missing META-INF/container.xml');
+            const containerXml = await containerFile.async('string');
+            const containerDoc = new DOMParser().parseFromString(containerXml, 'application/xml');
+            const rootfileEls = containerDoc.getElementsByTagName('rootfile');
+            if (!rootfileEls.length) throw new Error('Invalid EPUB: no rootfile in container.xml');
+            const opfPath = rootfileEls[0].getAttribute('full-path');
+            if (!opfPath) throw new Error('Invalid EPUB: rootfile missing full-path attribute');
+            const opfDir = getDir(opfPath);
+
+            // OPF
+            const opfFile = zip.file(opfPath);
+            if (!opfFile) throw new Error('Invalid EPUB: OPF file not found: ' + opfPath);
+            const opfContent = await opfFile.async('string');
+            const opfDoc = new DOMParser().parseFromString(opfContent, 'application/xml');
+
+            const packageEl = opfDoc.getElementsByTagName('package')[0];
+            const epubVersion = packageEl ? (packageEl.getAttribute('version') || '2.0') : '2.0';
+
+            // Title
+            let title = 'Unknown';
+            const titleByNs = opfDoc.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'title');
+            if (titleByNs.length) {
+                title = titleByNs[0].textContent.trim();
+            } else {
+                const titleFb = opfDoc.getElementsByTagName('dc:title');
+                if (titleFb.length) title = titleFb[0].textContent.trim();
+            }
+
+            // Author
+            let author = 'Unknown';
+            const creatorByNs = opfDoc.getElementsByTagNameNS('http://purl.org/dc/elements/1.1/', 'creator');
+            if (creatorByNs.length) {
+                author = creatorByNs[0].textContent.trim();
+            } else {
+                const creatorFb = opfDoc.getElementsByTagName('dc:creator');
+                if (creatorFb.length) author = creatorFb[0].textContent.trim();
+            }
+
+            // Manifest
+            const manifest = {};
+            const manifestItems = opfDoc.getElementsByTagName('item');
+            for (const item of manifestItems) {
+                const id = item.getAttribute('id');
+                const href = item.getAttribute('href');
+                const mediaType = item.getAttribute('media-type') || '';
+                const properties = item.getAttribute('properties') || '';
+                if (!id || !href) continue;
+                let decoded = href;
+                try { decoded = decodeURIComponent(href); } catch (_) { /* keep */ }
+                const absolutePath = resolvePath(opfDir, decoded);
+                manifest[id] = { id, href, mediaType, properties, absolutePath };
+            }
+
+            // Spine (ordered list of content items)
+            const spineItems = [];
+            const itemrefs = opfDoc.getElementsByTagName('itemref');
+            for (const ref of itemrefs) {
+                const idref = ref.getAttribute('idref');
+                if (idref && manifest[idref]) spineItems.push(manifest[idref]);
+            }
+            if (!spineItems.length) throw new Error('Invalid EPUB: spine is empty');
+
+            // File sizes for spine items (used for balanced partitioning)
+            for (const item of spineItems) {
+                const f = zip.file(item.absolutePath);
+                if (f) {
+                    const buf = await f.async('arraybuffer');
+                    item.size = buf.byteLength;
+                } else {
+                    item.size = 0;
+                }
+            }
+
+            const spineItemPaths = new Set(spineItems.map(i => i.absolutePath));
+
+            // NCX (epub2 navigation)
+            const ncxItem = Object.values(manifest).find(
+                m => m.mediaType === 'application/x-dtbncx+xml'
+            ) || null;
+
+            // nav.xhtml (epub3 navigation — identified by properties="nav")
+            const navItem = Object.values(manifest).find(
+                m => m.properties.split(/\s+/).includes('nav')
+            ) || null;
+
+            return {
+                zip, opfPath, opfDir, opfContent, containerXml,
+                epubVersion, title, author,
+                manifest, spineItems, spineItemPaths,
+                ncxItem, navItem,
+                fileName: file.name,
+                fileSize: file.size,
+            };
+        }
+
+        // ── Partitioning algorithm ─────────────────────────────────────────────
+
+        /**
+         * Split `items` into exactly `n` consecutive groups with similar total sizes.
+         * Uses prefix sums to find split points closest to the ideal targets.
+         * Guarantees each part has at least one item.
+         */
+        function splitIntoNParts(items, n) {
+            const count = items.length;
+            if (n >= count) return items.map(item => [item]);
+
+            // Prefix sums (treat zero-size items as 1 to avoid ties)
+            const prefix = [0];
+            for (const item of items) {
+                prefix.push(prefix[prefix.length - 1] + Math.max(item.size, 1));
+            }
+            const total = prefix[count];
+
+            // Find n-1 split indices
+            const splitPoints = [0];
+            for (let p = 1; p < n; p++) {
+                const target = (total * p) / n;
+                // Search range: must leave at least 1 item per remaining part
+                const lo = splitPoints[splitPoints.length - 1] + 1;
+                const hi = count - (n - p);
+                let bestIdx = lo;
+                let bestDiff = Infinity;
+                for (let i = lo; i <= hi; i++) {
+                    const diff = Math.abs(prefix[i] - target);
+                    if (diff < bestDiff) {
+                        bestDiff = diff;
+                        bestIdx = i;
+                    }
+                }
+                splitPoints.push(bestIdx);
+            }
+            splitPoints.push(count);
+
+            const parts = [];
+            for (let p = 0; p < n; p++) {
+                parts.push(items.slice(splitPoints[p], splitPoints[p + 1]));
+            }
+            return parts;
+        }
+
+        // ── Navigation filtering ───────────────────────────────────────────────
+
+        /**
+         * Remove NCX navPoints whose content src doesn't resolve to an allowed path.
+         */
+        function filterNcx(ncxContent, allowedPaths, ncxDir) {
+            const doc = new DOMParser().parseFromString(ncxContent, 'application/xml');
+            const navMap = doc.getElementsByTagName('navMap')[0];
+            if (!navMap) return ncxContent;
+
+            function pruneNavPoints(parent) {
+                const children = Array.from(parent.childNodes);
+                for (const child of children) {
+                    if (child.nodeType !== 1 || child.localName !== 'navPoint') continue;
+                    const contentEl = child.getElementsByTagName('content')[0];
+                    if (contentEl) {
+                        const src = contentEl.getAttribute('src') || '';
+                        const resolved = resolveEpubHref(ncxDir, src);
+                        if (!allowedPaths.has(resolved)) {
+                            parent.removeChild(child);
+                            continue;
+                        }
+                    }
+                    pruneNavPoints(child);
+                }
+            }
+
+            pruneNavPoints(navMap);
+            return new XMLSerializer().serializeToString(doc);
+        }
+
+        /**
+         * Remove nav.xhtml TOC entries whose href doesn't resolve to an allowed path.
+         */
+        function filterNav(navContent, allowedPaths, navDir) {
+            const doc = new DOMParser().parseFromString(navContent, 'application/xml');
+
+            function pruneOl(olEl) {
+                const children = Array.from(olEl.childNodes);
+                for (const li of children) {
+                    if (li.nodeType !== 1 || li.localName !== 'li') continue;
+
+                    // Find direct <a> child
+                    let aEl = null;
+                    for (const c of li.childNodes) {
+                        if (c.nodeType === 1 && c.localName === 'a') { aEl = c; break; }
+                    }
+
+                    if (aEl) {
+                        const href = aEl.getAttribute('href') || '';
+                        const resolved = resolveEpubHref(navDir, href);
+                        if (!allowedPaths.has(resolved)) {
+                            olEl.removeChild(li);
+                            continue;
+                        }
+                    }
+
+                    // Recursively prune nested ol elements
+                    for (const c of Array.from(li.childNodes)) {
+                        if (c.nodeType === 1 && c.localName === 'ol') pruneOl(c);
+                    }
+                }
+            }
+
+            // Walk all <nav> elements
+            const allEls = Array.from(doc.getElementsByTagName('*'));
+            for (const el of allEls) {
+                if (el.localName === 'nav') {
+                    for (const c of Array.from(el.childNodes)) {
+                        if (c.nodeType === 1 && c.localName === 'ol') pruneOl(c);
+                    }
+                }
+            }
+
+            return new XMLSerializer().serializeToString(doc);
+        }
+
+        // ── EPUB generation ────────────────────────────────────────────────────
+
+        async function generatePartEpub(info, partItems, partIdx, totalParts) {
+            const {
+                zip, opfPath, opfDir, opfContent, containerXml,
+                spineItemPaths, ncxItem, navItem, title, manifest,
+            } = info;
+
+            const partItemPaths = new Set(partItems.map(i => i.absolutePath));
+            const newZip = new JSZip();
+
+            // mimetype — must be uncompressed
+            newZip.file('mimetype', 'application/epub+zip', { compression: 'STORE' });
+
+            // Copy all files except those we'll handle specially
+            for (const [path, entry] of Object.entries(zip.files)) {
+                if (entry.dir) continue;
+                if (path === 'mimetype') continue;
+                if (path === opfPath) continue;
+                if (ncxItem && path === ncxItem.absolutePath) continue;
+                if (navItem && path === navItem.absolutePath) continue;
+                // Skip spine content files that belong to other parts
+                if (spineItemPaths.has(path) && !partItemPaths.has(path)) continue;
+
+                newZip.file(path, await entry.async('arraybuffer'));
+            }
+
+            // Modified OPF
+            const opfDoc = new DOMParser().parseFromString(opfContent, 'application/xml');
+
+            // Update title: append " - Part X of N"
+            const dcNs = 'http://purl.org/dc/elements/1.1/';
+            const titleEls = opfDoc.getElementsByTagNameNS(dcNs, 'title');
+            if (titleEls.length) {
+                titleEls[0].textContent = title + ' - Part ' + (partIdx + 1) + ' of ' + totalParts;
+            }
+
+            // Remove spine itemrefs for excluded content files
+            const spineEl = opfDoc.getElementsByTagName('spine')[0];
+            if (spineEl) {
+                for (const ref of Array.from(opfDoc.getElementsByTagName('itemref'))) {
+                    const idref = ref.getAttribute('idref');
+                    const m = manifest[idref];
+                    if (m && spineItemPaths.has(m.absolutePath) && !partItemPaths.has(m.absolutePath)) {
+                        spineEl.removeChild(ref);
+                    }
+                }
+            }
+
+            // Remove manifest entries for excluded content files
+            const manifestEl = opfDoc.getElementsByTagName('manifest')[0];
+            if (manifestEl) {
+                for (const item of Array.from(opfDoc.getElementsByTagName('item'))) {
+                    const id = item.getAttribute('id');
+                    const m = manifest[id];
+                    if (m && spineItemPaths.has(m.absolutePath) && !partItemPaths.has(m.absolutePath)) {
+                        manifestEl.removeChild(item);
+                    }
+                }
+            }
+
+            newZip.file(opfPath, new XMLSerializer().serializeToString(opfDoc));
+
+            // Modified NCX (epub2)
+            if (ncxItem) {
+                const ncxFile = zip.file(ncxItem.absolutePath);
+                if (ncxFile) {
+                    const ncxContent = await ncxFile.async('string');
+                    const ncxDir = getDir(ncxItem.absolutePath);
+                    newZip.file(ncxItem.absolutePath, filterNcx(ncxContent, partItemPaths, ncxDir));
+                }
+            }
+
+            // Modified nav.xhtml (epub3)
+            if (navItem) {
+                const navFile = zip.file(navItem.absolutePath);
+                if (navFile) {
+                    const navContent = await navFile.async('string');
+                    const navDir = getDir(navItem.absolutePath);
+                    newZip.file(navItem.absolutePath, filterNav(navContent, partItemPaths, navDir));
+                }
+            }
+
+            return newZip.generateAsync({ type: 'blob', mimeType: 'application/epub+zip', compression: 'DEFLATE' });
+        }
+
+        // ── Preview ────────────────────────────────────────────────────────────
+
+        function updatePreview() {
+            if (!epubInfo) return;
+
+            let n = parseInt(document.getElementById('partsInput').value) || 2;
+            n = Math.max(2, Math.min(n, epubInfo.spineItems.length));
+
+            const parts = splitIntoNParts(epubInfo.spineItems, n);
+            let html = '<table class="preview-table"><thead><tr>' +
+                '<th>Part</th><th>Files</th><th>HTML size</th></tr></thead><tbody>';
+
+            for (let i = 0; i < parts.length; i++) {
+                const htmlSize = parts[i].reduce((s, item) => s + item.size, 0);
+                const names = parts[i].map(item => item.href.split('/').pop()).join(', ');
+                html += `<tr>
+                    <td>Part ${i + 1}</td>
+                    <td>${parts[i].length} file${parts[i].length !== 1 ? 's' : ''}
+                        <div class="file-names-mini">${names}</div></td>
+                    <td>${formatSize(htmlSize)}</td>
+                </tr>`;
+            }
+            html += '</tbody></table>';
+            document.getElementById('previewArea').innerHTML = html;
+        }
+
+        // ── File upload ────────────────────────────────────────────────────────
+
+        async function handleFile(file) {
+            if (!file.name.toLowerCase().endsWith('.epub')) {
+                showError('Please select a valid EPUB file (.epub)');
+                return;
+            }
+            hideError();
+            showProcessing('Reading EPUB…', '');
+
+            try {
+                epubInfo = await parseEpub(file);
+                splitParts = null;
+
+                document.getElementById('infoTitle').textContent = epubInfo.title;
+                document.getElementById('infoAuthor').textContent = epubInfo.author;
+                document.getElementById('infoFormat').textContent = 'EPUB ' + epubInfo.epubVersion;
+                document.getElementById('infoFileSize').textContent = formatSize(epubInfo.fileSize);
+                document.getElementById('infoChapters').textContent = epubInfo.spineItems.length;
+                document.getElementById('infoCard').classList.add('active');
+
+                if (epubInfo.spineItems.length < 2) {
+                    hideProcessing();
+                    showError('This EPUB has only ' + epubInfo.spineItems.length +
+                        ' HTML content file and cannot be split further.');
+                    document.getElementById('controlsSection').classList.remove('active');
+                    document.getElementById('resultsSection').classList.remove('active');
+                    return;
+                }
+
+                const maxParts = epubInfo.spineItems.length;
+                const partsInput = document.getElementById('partsInput');
+                partsInput.max = maxParts;
+                partsInput.value = Math.min(2, maxParts);
+                document.getElementById('partsHint').textContent = '(max ' + maxParts + ')';
+
+                document.getElementById('controlsSection').classList.add('active');
+                document.getElementById('resultsSection').classList.remove('active');
+                updatePreview();
+            } catch (err) {
+                showError('Error reading EPUB: ' + err.message);
+                console.error(err);
+            } finally {
+                hideProcessing();
+            }
+        }
+
+        // ── UI event wiring ────────────────────────────────────────────────────
+
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+
+        uploadSection.addEventListener('click', () => fileInput.click());
+        uploadSection.addEventListener('dragover', e => {
+            e.preventDefault();
+            uploadSection.classList.add('drag-over');
+        });
+        uploadSection.addEventListener('dragleave', () => uploadSection.classList.remove('drag-over'));
+        uploadSection.addEventListener('drop', e => {
+            e.preventDefault();
+            uploadSection.classList.remove('drag-over');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        });
+        fileInput.addEventListener('change', e => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        });
+
+        const partsInput = document.getElementById('partsInput');
+        partsInput.addEventListener('input', updatePreview);
+        partsInput.addEventListener('change', () => {
+            if (!epubInfo) return;
+            let n = parseInt(partsInput.value) || 2;
+            n = Math.max(2, Math.min(n, epubInfo.spineItems.length));
+            partsInput.value = n;
+            updatePreview();
+        });
+
+        document.getElementById('splitBtn').addEventListener('click', async () => {
+            if (!epubInfo) return;
+
+            let n = parseInt(partsInput.value) || 2;
+            n = Math.max(2, Math.min(n, epubInfo.spineItems.length));
+            partsInput.value = n;
+
+            const splitBtn = document.getElementById('splitBtn');
+            splitBtn.disabled = true;
+
+            try {
+                const parts = splitIntoNParts(epubInfo.spineItems, n);
+                splitParts = [];
+
+                for (let i = 0; i < parts.length; i++) {
+                    showProcessing('Splitting EPUB…', 'Generating part ' + (i + 1) + ' of ' + n + '…');
+                    await new Promise(resolve => setTimeout(resolve, 0)); // allow repaint
+                    const blob = await generatePartEpub(epubInfo, parts[i], i, n);
+                    const baseName = epubInfo.fileName.replace(/\.epub$/i, '');
+                    splitParts.push({
+                        name: baseName + '_part' + (i + 1) + 'of' + n + '.epub',
+                        blob,
+                        fileCount: parts[i].length,
+                    });
+                }
+
+                const listEl = document.getElementById('downloadList');
+                listEl.innerHTML = splitParts.map((part, i) => `
+                    <li class="download-item">
+                        <div class="download-item-info">
+                            <strong>${part.name}</strong>
+                            <span>Part ${i + 1} · ${part.fileCount} HTML file${part.fileCount !== 1 ? 's' : ''} · ${formatSize(part.blob.size)}</span>
+                        </div>
+                        <button class="download-btn-item" onclick="downloadPart(${i})">⬇️ Download</button>
+                    </li>`).join('');
+
+                const resultsSection = document.getElementById('resultsSection');
+                resultsSection.classList.add('active');
+                resultsSection.scrollIntoView({ behavior: 'smooth' });
+            } catch (err) {
+                showError('Error splitting EPUB: ' + err.message);
+                console.error(err);
+            } finally {
+                hideProcessing();
+                splitBtn.disabled = false;
+            }
+        });
+
+        document.getElementById('downloadAllBtn').addEventListener('click', async () => {
+            if (!splitParts || !splitParts.length) return;
+            showProcessing('Building ZIP archive…', '');
+            try {
+                const archiveZip = new JSZip();
+                for (const part of splitParts) archiveZip.file(part.name, part.blob);
+                const zipBlob = await archiveZip.generateAsync({ type: 'blob', compression: 'STORE' });
+                const baseName = epubInfo.fileName.replace(/\.epub$/i, '');
+                triggerDownload(zipBlob, baseName + '_parts.zip');
+            } catch (err) {
+                showError('Error creating ZIP: ' + err.message);
+            } finally {
+                hideProcessing();
+            }
+        });
+
+        function downloadPart(idx) {
+            const part = splitParts[idx];
+            triggerDownload(part.blob, part.name);
+        }
+
+        function triggerDownload(blob, filename) {
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        function showProcessing(main, sub) {
+            document.getElementById('processingText').textContent = main;
+            document.getElementById('progressText').textContent = sub;
+            document.getElementById('processingOverlay').classList.add('active');
+        }
+
+        function hideProcessing() {
+            document.getElementById('processingOverlay').classList.remove('active');
+        }
+    </script>
+</body>
+</html>
