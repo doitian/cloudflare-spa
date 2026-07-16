@@ -643,8 +643,11 @@
 
         function ensureSvgXmlns(svgText) {
             if (/<svg[^>]*xmlns\s*=/i.test(svgText)) return svgText;
-            if (!/<svg(\s+|>)/i.test(svgText)) return svgText;
-            return svgText.replace(/<svg(\s+|>)/i, '<svg xmlns="http://www.w3.org/2000/svg"$1');
+            if (!/<svg(?:\s|>)/i.test(svgText)) return svgText;
+            return svgText.replace(/<svg(\s+[^>]*|>)/i, (_, tail) => {
+                if (tail === '>') return '<svg xmlns="http://www.w3.org/2000/svg">';
+                return `<svg xmlns="http://www.w3.org/2000/svg"${tail}`;
+            });
         }
 
         // Scale button handlers
