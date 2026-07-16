@@ -645,7 +645,7 @@
             if (/<svg[^>]*xmlns\s*=/i.test(svgText)) return svgText;
             if (!/<svg(?:\s|>)/i.test(svgText)) return svgText;
             return svgText.replace(/<svg([^>]*)>/i, (_, attrs) => {
-                const separator = attrs && !attrs.startsWith(' ') ? ' ' : '';
+                const separator = attrs && attrs.trim() && !attrs.startsWith(' ') ? ' ' : '';
                 return `<svg xmlns="http://www.w3.org/2000/svg"${separator}${attrs}>`;
             });
         }
