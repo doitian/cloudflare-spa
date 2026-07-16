@@ -641,6 +641,17 @@
             return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
         }
 
+        function ensureSvgXmlns(svgText) {
+            const parser = new DOMParser();
+            const doc = parser.parseFromString(svgText, 'image/svg+xml');
+            const root = doc.documentElement;
+            if (!root || root.nodeName.toLowerCase() !== 'svg') return svgText;
+            if (!root.hasAttribute('xmlns')) {
+                root.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+            }
+            return new XMLSerializer().serializeToString(root);
+        }
+
         // Scale button handlers
         document.querySelectorAll('.scale-btn[data-scale]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -720,7 +731,7 @@
         function downloadSVG() {
             if (!svgContent) return;
 
-            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const blob = new Blob([ensureSvgXmlns(svgContent)], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.download = fileName;
