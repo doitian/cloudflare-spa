@@ -641,6 +641,15 @@
             return (bytes / (1024 * 1024)).toFixed(2) + ' MB';
         }
 
+        function ensureSvgXmlns(svgText) {
+            if (/<svg[^>]*xmlns\s*=/i.test(svgText)) return svgText;
+            if (!/<svg(?:\s|>)/i.test(svgText)) return svgText;
+            return svgText.replace(/<svg([^>]*)>/i, (_, attrs) => {
+                const separator = attrs && attrs.trim() && !attrs.startsWith(' ') ? ' ' : '';
+                return `<svg xmlns="http://www.w3.org/2000/svg"${separator}${attrs}>`;
+            });
+        }
+
         // Scale button handlers
         document.querySelectorAll('.scale-btn[data-scale]').forEach(btn => {
             btn.addEventListener('click', (e) => {
@@ -720,7 +729,7 @@
         function downloadSVG() {
             if (!svgContent) return;
 
-            const blob = new Blob([svgContent], { type: 'image/svg+xml' });
+            const blob = new Blob([ensureSvgXmlns(svgContent)], { type: 'image/svg+xml' });
             const url = URL.createObjectURL(blob);
             const link = document.createElement('a');
             link.download = fileName;
