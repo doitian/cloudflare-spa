@@ -642,14 +642,9 @@
         }
 
         function ensureSvgXmlns(svgText) {
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(svgText, 'image/svg+xml');
-            const root = doc.documentElement;
-            if (!root || root.nodeName.toLowerCase() !== 'svg') return svgText;
-            if (!root.hasAttribute('xmlns')) {
-                root.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-            }
-            return new XMLSerializer().serializeToString(root);
+            if (/\<svg\b[^>]*\bxmlns\s*=/i.test(svgText)) return svgText;
+            if (!/\<svg[\s>]/i.test(svgText)) return svgText;
+            return svgText.replace(/<svg(\s|>)/i, '<svg xmlns="http://www.w3.org/2000/svg"$1');
         }
 
         // Scale button handlers
