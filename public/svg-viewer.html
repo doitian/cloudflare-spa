@@ -642,8 +642,8 @@
         }
 
         function ensureSvgXmlns(svgText) {
-            if (/\<svg\b[^>]*\bxmlns\s*=/i.test(svgText)) return svgText;
-            if (!/\<svg[\s>]/i.test(svgText)) return svgText;
+            if (/<svg\b[^>]*\bxmlns\s*=/i.test(svgText)) return svgText;
+            if (!/<svg[\s>]/i.test(svgText)) return svgText;
             return svgText.replace(/<svg(\s|>)/i, '<svg xmlns="http://www.w3.org/2000/svg"$1');
         }
 
