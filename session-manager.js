@@ -46,6 +46,8 @@ export class SessionManager {
         answer: null,
         creatorWs: null,
         joinerWs: null,
+        creatorCandidates: [],
+        joinerCandidates: [],
         createdAt: Date.now()
       });
     }
@@ -66,6 +68,9 @@ export class SessionManager {
           type: 'answer',
           answer: session.answer
         });
+        for (const candidate of session.joinerCandidates) {
+          this.sendMessage(server, { type: 'ice-candidate', candidate });
+        }
       }
     } else if (role === 'joiner') {
       // Close any existing joiner connection
@@ -80,6 +85,9 @@ export class SessionManager {
           type: 'offer',
           offer: session.offer
         });
+        for (const candidate of session.creatorCandidates) {
+          this.sendMessage(server, { type: 'ice-candidate', candidate });
+        }
       } else {
         this.sendMessage(server, {
           type: 'error',
@@ -185,14 +193,12 @@ export class SessionManager {
         break;
 
       case 'ice-candidate':
-        // Relay ICE candidate to the other peer
-        if (role === 'creator' && session.joinerWs) {
-          this.sendMessage(session.joinerWs, {
-            type: 'ice-candidate',
-            candidate: message.candidate
-          });
-        } else if (role === 'joiner' && session.creatorWs) {
-          this.sendMessage(session.creatorWs, {
+        // Retain trickled candidates so a late peer also receives relay addresses.
+        if (role === 'creator' || role === 'joiner') {
+          const candidates = role === 'creator' ? session.creatorCandidates : session.joinerCandidates;
+          candidates.push(message.candidate);
+          const remoteWs = role === 'creator' ? session.joinerWs : session.creatorWs;
+          this.sendMessage(remoteWs, {
             type: 'ice-candidate',
             candidate: message.candidate
           });

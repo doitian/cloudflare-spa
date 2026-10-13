@@ -513,13 +513,15 @@
                     resolve();
                 };
 
-                signalingWs.onmessage = async (event) => {
-                    try {
-                        const message = JSON.parse(event.data);
-                        await handleSignalingMessage(message);
-                    } catch (error) {
+                let messageQueue = Promise.resolve();
+                signalingWs.onmessage = (event) => {
+                    // SDP must finish applying before later candidates are processed.
+                    messageQueue = messageQueue.then(() => {
+                        return handleSignalingMessage(JSON.parse(event.data));
+                    }).catch((error) => {
                         console.error('Error handling signaling message:', error);
-                    }
+                        showStatus('error', 'Signaling failed: ' + error.message);
+                    });
                 };
 
                 signalingWs.onerror = (error) => {
@@ -618,11 +620,7 @@
             showStatus('info', 'Creating session...');
 
             try {
-                // Fetch ICE server config (includes TURN if configured) and setup WebSocket
-                const [rtcConfig] = await Promise.all([
-                    getIceConfig(),
-                    setupSignalingWebSocket(sessionCode, 'creator')
-                ]);
+                const rtcConfig = await getIceConfig();
 
                 // Create peer connection
                 peerConnection = new RTCPeerConnection(rtcConfig);
@@ -631,6 +629,7 @@
                 // Create data channel
                 dataChannel = peerConnection.createDataChannel('fileTransfer');
                 setupDataChannel();
+                await setupSignalingWebSocket(sessionCode, 'creator');
 
                 // Create offer
                 const offer = await peerConnection.createOffer();
@@ -670,11 +669,7 @@
                 transferSection.classList.remove('hidden');
                 showStatus('info', 'Connecting to session...');
 
-                // Fetch ICE server config (includes TURN if configured) and setup WebSocket
-                const [rtcConfig] = await Promise.all([
-                    getIceConfig(),
-                    setupSignalingWebSocket(sessionCode, 'joiner')
-                ]);
+                const rtcConfig = await getIceConfig();
 
                 // Create peer connection
                 peerConnection = new RTCPeerConnection(rtcConfig);
@@ -687,6 +682,7 @@
                 };
 
                 showStatus('info', 'Waiting for session details...');
+                await setupSignalingWebSocket(sessionCode, 'joiner');
                 
                 // The offer will be received via WebSocket onmessage handler
                 // which will trigger the answer creation automatically
